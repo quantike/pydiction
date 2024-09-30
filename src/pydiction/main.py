@@ -108,7 +108,7 @@ async def connect_and_stream(api_token, conn, market_tickers_file):
         }
 
         await websocket.send(json.dumps(subscription_message))
-        logging.info(f"Subscribing to `orderbook` for market tickers: {market_tickers}")
+        logging.info(f"Subscribing to `{subscription_message["params"]["channels"]}` for market tickers: {market_tickers}")
 
         cursor = conn.cursor()
 
@@ -128,7 +128,7 @@ async def connect_and_stream(api_token, conn, market_tickers_file):
 
             # Process orderbook snapshot
             if json_data["type"] == "orderbook_snapshot":
-                logging.info("snapshot msg rx")
+                logging.info(f"{json_data["msg"]["market_ticker"]} | snapshot")
 
                 market_ticker = json_data["msg"]["market_ticker"]
                 market_id = json_data["msg"]["market_id"]
@@ -154,7 +154,7 @@ async def connect_and_stream(api_token, conn, market_tickers_file):
 
             # Process orderbook delta
             elif json_data["type"] == "orderbook_delta":
-                logging.info("delta msg rx")
+                logging.info(f"{json_data["msg"]["market_ticker"]} | delta")
 
                 market_ticker = json_data["msg"]["market_ticker"]
                 market_id = json_data["msg"]["market_id"]
