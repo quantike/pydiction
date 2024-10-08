@@ -2,8 +2,8 @@ from collections import namedtuple
 from typing import Dict, List
 
 
-Level = namedtuple('Level', ['price', 'quantity'])
-Delta = namedtuple('Delta', ['price', 'delta'])
+Level = namedtuple("Level", ["price", "quantity"])
+Delta = namedtuple("Delta", ["price", "delta"])
 
 
 class Orderbook:
@@ -15,13 +15,15 @@ class Orderbook:
         self.bids = bids
         self.asks = asks
 
-    def sort(self) -> None: 
+    def sort(self) -> None:
         """
         Sorts bids and asks, with bids in reverse order.
 
         Some book sorts might remove levels past a certain depth, but books have a finite depth of 100 in prediction markets.
         """
-        self.bids.sort(key=lambda level: level.price, reverse=True)  # bids are typically sorted in reverse
+        self.bids.sort(
+            key=lambda level: level.price, reverse=True
+        )  # bids are typically sorted in reverse
         self.asks.sort(key=lambda level: level.price)
 
     def update(self, book: List[Level], deltas: List[Delta]) -> None:
@@ -37,21 +39,21 @@ class Orderbook:
                     new_quanity = level.quantity + delta.delta
 
                     # If positive, update quanitity at price level in book
-                    if new_quanity > 0: 
+                    if new_quanity > 0:
                         book[i] = Level(level.price, new_quanity)
 
                     # If zero (or negative), remove price level from book
-                    else: 
+                    else:
                         book.pop(i)
 
                     break
 
             # If there is no matching price in the book, append it to the book
-            else: 
+            else:
                 if delta.delta > 0:  # Delta should *always* be positive in this case
                     book.append(Level(delta.price, delta.delta))
 
-        # Sort the book 
+        # Sort the book
         self.sort()
 
     def refresh(self, side: str, snapshot: List[Level]) -> None:
@@ -62,7 +64,7 @@ class Orderbook:
         match side:
             case "bids":
                 self.bids = snapshot
-            case "asks": 
+            case "asks":
                 self.asks = snapshot
             case _:
                 print("Encountered undefined `side` while applying orderbook refresh")
@@ -79,9 +81,13 @@ class Orderbook:
         match recv["type"]:
             case "orderbook_snapshot":
                 # Create book for "yes" and "no", if they exist
-                yes_levels = [Level(level[0], level[1]) for level in recv["msg"].get("yes", [])]
-                no_levels = [Level(level[0], level[1]) for level in recv["msg"].get("no", [])]
-                
+                yes_levels = [
+                    Level(level[0], level[1]) for level in recv["msg"].get("yes", [])
+                ]
+                no_levels = [
+                    Level(level[0], level[1]) for level in recv["msg"].get("no", [])
+                ]
+
                 # If there are elements, refresh book
                 if yes_levels:
                     self.refresh(side="bids", snapshot=yes_levels)
@@ -104,4 +110,3 @@ class Orderbook:
 
             case _:
                 print("unknown element encountered")
-

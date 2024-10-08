@@ -78,7 +78,7 @@ async def check_for_yaml_updates(websocket, subscription_message, market_tickers
             last_modified_time = current_modified_time
 
             # Update the market tickers in the subscription message
-            subscription_message['params']['market_tickers'] = market_tickers
+            subscription_message["params"]["market_tickers"] = market_tickers
 
             # Resubscribe with updated market tickers
             await websocket.send(json.dumps(subscription_message))
@@ -113,11 +113,15 @@ async def connect_and_stream(api_token, conn, market_tickers_file):
         cursor = conn.cursor()
 
         # Start a background task to check for YAML updates periodically
-        asyncio.create_task(check_for_yaml_updates(websocket, subscription_message, market_tickers_file))
+        asyncio.create_task(
+            check_for_yaml_updates(websocket, subscription_message, market_tickers_file)
+        )
 
         while not stop_event.is_set():  # Check for stop event
             try:
-                data = await asyncio.wait_for(websocket.recv(), timeout=1.0)  # Non-blocking receive
+                data = await asyncio.wait_for(
+                    websocket.recv(), timeout=1.0
+                )  # Non-blocking receive
             except asyncio.TimeoutError:
                 continue  # Continue on timeout
 
