@@ -26,32 +26,31 @@ class Orderbook:
         )  # bids are typically sorted in reverse
         self.asks.sort(key=lambda level: level.price)
 
-    def update(self, book: List[Level], deltas: List[Delta]) -> None:
+    def update(self, book: List[Level], delta: Delta) -> None:
         """
-        Updated the book with any new deltas.
+        Updated the book with any new delta.
 
-        TODO: Since I am sure these are fairly infrequent, we probably don't need to pass this as a `List[Delta]`. The intended use is to be called on every delta message anyway.
+        TODO: "orderbook_delta" messages always come one-at-a-time so we do not need to use `List[Delta]`
         """
-        for delta in deltas:
-            for i, level in enumerate(book):
-                # If there is a matching price, update the quantity with the delta
-                if delta.price == level.price:
-                    new_quanity = level.quantity + delta.delta
+        for i, level in enumerate(book):
+            # If there is a matching price, update the quantity with the delta
+            if delta.price == level.price:
+                new_quanity = level.quantity + delta.delta
 
-                    # If positive, update quanitity at price level in book
-                    if new_quanity > 0:
-                        book[i] = Level(level.price, new_quanity)
+                # If positive, update quanitity at price level in book
+                if new_quanity > 0:
+                    book[i] = Level(level.price, new_quanity)
 
-                    # If zero (or negative), remove price level from book
-                    else:
-                        book.pop(i)
+                # If zero (or negative), remove price level from book
+                else:
+                    book.pop(i)
 
-                    break
+                break
 
-            # If there is no matching price in the book, append it to the book
-            else:
-                if delta.delta > 0:  # Delta should *always* be positive in this case
-                    book.append(Level(delta.price, delta.delta))
+        # If there is no matching price in the book, append it to the book
+        else:
+            if delta.delta > 0:  # Delta should *always* be positive in this case
+                book.append(Level(delta.price, delta.delta))
 
         # Sort the book
         self.sort()
@@ -74,7 +73,7 @@ class Orderbook:
 
     def process(self, recv: Dict) -> None:
         """
-        Handles incoming WebSocket messages from the "orderbook_deltas" channel.
+        Handles incoming WebSocket messages from the "orderbook_delta" channel.
 
         Messages will be of `"type": "orderbook_snapshot"|"orderbook_delta"` in the `recv` dictionary.
         """
@@ -102,9 +101,9 @@ class Orderbook:
 
                 # Update the correct side of the book
                 if recv["msg"]["side"] == "yes":
-                    self.update(self.bids, deltas=[delta])
+                    self.update(self.bids, delta=delta)
                 elif recv["msg"]["side"] == "no":
-                    self.update(self.asks, deltas=[delta])
+                    self.update(self.asks, delta=delta)
 
                 print("delta processed")
 
