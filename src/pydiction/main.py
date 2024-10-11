@@ -84,7 +84,7 @@ async def check_for_yaml_updates(websocket, subscription_message, market_tickers
             logging.info(f"Resubscribed to new market tickers: {market_tickers}")
 
 
-# Save snapshots as json 
+# Save snapshots as json
 def save_snapshot(snapshot: Dict) -> None:
     with open("snapshot.json", "a") as f:
         json.dump(snapshot, f)
@@ -93,7 +93,7 @@ def save_snapshot(snapshot: Dict) -> None:
 
 # Save deltas as json (every ~100 updates or on termination)
 def save_deltas(deltas: List[Dict]) -> None:
-    if deltas: 
+    if deltas:
         with open("deltas.json", "a") as f:
             for delta in deltas:
                 json.dump(delta, f)
@@ -103,7 +103,9 @@ def save_deltas(deltas: List[Dict]) -> None:
 
 
 # # Orderbook updates
-async def update_handler(queue: asyncio.Queue, orderbook: Orderbook, deltas: List[Dict]) -> None:
+async def update_handler(
+    queue: asyncio.Queue, orderbook: Orderbook, deltas: List[Dict]
+) -> None:
     while True:
         # If we encounter a stop signal, and there's nothing in the queue we can exit
         if stop_event.is_set() and not queue.qsize():
@@ -111,9 +113,9 @@ async def update_handler(queue: asyncio.Queue, orderbook: Orderbook, deltas: Lis
 
         message = await queue.get()
 
-        # Update the Orderbook by passing the message 
+        # Update the Orderbook by passing the message
         orderbook.process(message)
-        
+
         timestamp = int(
             datetime.datetime.now(datetime.timezone.utc).timestamp()
         )  # Get current UTC timestamp as integer
@@ -139,31 +141,37 @@ async def update_handler(queue: asyncio.Queue, orderbook: Orderbook, deltas: Lis
             case "orderbook_delta":
                 msg = message["msg"]
 
-                deltas.append({
-                    "sid": message["sid"],
-                    "seq": message["seq"],
-                    "market_ticker": msg["market_ticker"],
-                    "price": msg["price"],
-                    "delta": msg["delta"],
-                    "side": 1 if msg["side"] == "yes" else 0,
-                    "timestamp": timestamp,
-                })
+                deltas.append(
+                    {
+                        "sid": message["sid"],
+                        "seq": message["seq"],
+                        "market_ticker": msg["market_ticker"],
+                        "price": msg["price"],
+                        "delta": msg["delta"],
+                        "side": 1 if msg["side"] == "yes" else 0,
+                        "timestamp": timestamp,
+                    }
+                )
 
                 if len(deltas) >= 100:
                     save_deltas(deltas)
 
             # Handle error
             case "error":
-                logging.error(f"Code {message["msg"]["code"]}: '{message["msg"]["msg"]}'")
+                logging.error(
+                    f"Code {message["msg"]["code"]}: '{message["msg"]["msg"]}'"
+                )
 
         # Task completed
         queue.task_done()
 
-    # Save any remaining deltas on shutdown 
+    # Save any remaining deltas on shutdown
     save_deltas(deltas)
 
 
-async def websocket_listener(api_token: str, queue: asyncio.Queue, tickers_filename: str) -> None:
+async def websocket_listener(
+    api_token: str, queue: asyncio.Queue, tickers_filename: str
+) -> None:
     headers = {"Authorization": f"Bearer {api_token}"}
     tickers = load_market_tickers(tickers_filename)
 
@@ -191,7 +199,7 @@ async def websocket_listener(api_token: str, queue: asyncio.Queue, tickers_filen
             check_for_yaml_updates(websocket, subscription_message, tickers_filename)
         )
 
-        while True: 
+        while True:
             try:
                 data = await asyncio.wait_for(websocket.recv(), timeout=1.0)
                 await queue.put(json.loads(data))
@@ -210,7 +218,7 @@ async def main(api_token, market_tickers_file):
 
     await asyncio.gather(
         websocket_listener(api_token, queue, market_tickers_file),
-        update_handler(queue, orderbook, deltas)
+        update_handler(queue, orderbook, deltas),
     )
 
 
