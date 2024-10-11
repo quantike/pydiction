@@ -1,5 +1,6 @@
 import sqlite3
 import logging
+from typing import List, Tuple
 
 
 # Configure basic logging
@@ -79,5 +80,5 @@ def get_or_create_market_id(cursor, market_id, market_ticker):
 
 
 # Function to convert price levels to a compact delimited format
-def convert_levels_to_string(levels):
+def convert_levels_to_string(levels: List[Tuple[int, int]]):
     return ",".join([f"{price}:{contracts}" for price, contracts in levels])
