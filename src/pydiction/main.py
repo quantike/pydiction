@@ -1,4 +1,5 @@
 import asyncio
+from typing import Dict, List
 import websockets
 import json
 import requests
@@ -10,11 +11,8 @@ import signal
 
 from dotenv import load_dotenv
 
-from pydiction.db import (
-    convert_levels_to_string,
-    get_or_create_market_id,
-    setup_database,
-)
+from pydiction.db import convert_levels_to_string
+from pydiction.book import Orderbook
 
 
 # Load environment variables from .env (check sample.env for required variables)
@@ -22,6 +20,7 @@ load_dotenv()
 
 EMAIL = os.getenv("EMAIL")
 PASSWORD = os.getenv("PASSWORD")
+WEBSOCKET_BASE_URL = "trading-api"
 
 # Configure basic logging
 logging.basicConfig(
@@ -40,7 +39,7 @@ def signal_handler(sig, frame):
 
 # Logs in to exchange via email + password, returns the session token
 def get_kalshi_api_token(email, password):
-    url = "https://trading-api.kalshi.com/trade-api/v2/login"
+    url = f"https://{WEBSOCKET_BASE_URL}.kalshi.com/trade-api/v2/login"
     headers = {
         "accept": "application/json",
         "content-type": "application/json",
@@ -57,7 +56,7 @@ def get_kalshi_api_token(email, password):
 
 
 # Function to load latest market tickers from a YAML file
-def load_market_tickers(file_path):
+def load_market_tickers(file_path: str) -> List:
     with open(file_path, "r") as file:
         config = yaml.safe_load(file)
 
@@ -85,123 +84,150 @@ async def check_for_yaml_updates(websocket, subscription_message, market_tickers
             logging.info(f"Resubscribed to new market tickers: {market_tickers}")
 
 
-# Connects to the orderbook(s), and streams that data to our sqlite instance
-async def connect_and_stream(api_token, conn, market_tickers_file):
-    headers = {"Authorization": f"Bearer {api_token}"}
+# Save snapshots as json 
+def save_snapshot(snapshot: Dict) -> None:
+    with open("snapshot.json", "a") as f:
+        json.dump(snapshot, f)
+        f.write("\n")
 
-    market_tickers = load_market_tickers(market_tickers_file)
+
+# Save deltas as json (every ~100 updates or on termination)
+def save_deltas(deltas: List[Dict]) -> None:
+    if deltas: 
+        with open("deltas.json", "a") as f:
+            for delta in deltas:
+                json.dump(delta, f)
+                f.write("\n")
+
+        deltas.clear()
+
+
+# # Orderbook updates
+async def update_handler(queue: asyncio.Queue, orderbook: Orderbook, deltas: List[Dict]) -> None:
+    while True:
+        # If we encounter a stop signal, and there's nothing in the queue we can exit
+        if stop_event.is_set() and not queue.qsize():
+            break
+
+        message = await queue.get()
+
+        # Update the Orderbook by passing the message 
+        orderbook.process(message)
+        
+        timestamp = int(
+            datetime.datetime.now(datetime.timezone.utc).timestamp()
+        )  # Get current UTC timestamp as integer
+
+        # Always save snapshots immediately (since they are rare)
+        match message["type"]:
+            # Handle snapshot
+            case "orderbook_snapshot":
+                msg = message["msg"]
+
+                snapshot = {
+                    "sid": message["sid"],
+                    "seq": message["seq"],
+                    "market_ticker": msg["market_ticker"],
+                    "yes": convert_levels_to_string(msg["yes"]),
+                    "no": convert_levels_to_string(msg["no"]),
+                    "timestamp": timestamp,
+                }
+
+                save_snapshot(snapshot)
+
+            # Handle delta
+            case "orderbook_delta":
+                msg = message["msg"]
+
+                deltas.append({
+                    "sid": message["sid"],
+                    "seq": message["seq"],
+                    "market_ticker": msg["market_ticker"],
+                    "price": msg["price"],
+                    "delta": msg["delta"],
+                    "side": 1 if msg["side"] == "yes" else 0,
+                    "timestamp": timestamp,
+                })
+
+                if len(deltas) >= 100:
+                    save_deltas(deltas)
+
+            # Handle error
+            case "error":
+                logging.error(f"Code {message["msg"]["code"]}: '{message["msg"]["msg"]}'")
+
+        # Task completed
+        queue.task_done()
+
+    # Save any remaining deltas on shutdown 
+    save_deltas(deltas)
+
+
+async def websocket_listener(api_token: str, queue: asyncio.Queue, tickers_filename: str) -> None:
+    headers = {"Authorization": f"Bearer {api_token}"}
+    tickers = load_market_tickers(tickers_filename)
 
     async with websockets.connect(
-        "wss://trading-api.kalshi.com/trade-api/ws/v2",
+        f"wss://{WEBSOCKET_BASE_URL}.kalshi.com/trade-api/v2",
         extra_headers=headers,
     ) as websocket:
-        logging.info("Connected to Kalshi Exchange Websocket feed")
+        logging.info(f"Connected to Exchange WebSocket on `{WEBSOCKET_BASE_URL}`")
 
-        # Subscription message
+        # Send subscription message
         subscription_message = {
             "id": 1,  # Sequential command ID
             "cmd": "subscribe",
             "params": {
                 "channels": ["orderbook_delta"],
-                "market_tickers": market_tickers,
+                "market_tickers": tickers,
             },
         }
 
         await websocket.send(json.dumps(subscription_message))
-        logging.info(f"Subscribing to `orderbook` for market tickers: {market_tickers}")
+        logging.info(f"Subscribing to 'orderbook_delta' channel for {tickers}")
 
-        cursor = conn.cursor()
-
-        # Start a background task to check for YAML updates periodically
+        # Start background task that will check for YAML updates periodically
         asyncio.create_task(
-            check_for_yaml_updates(websocket, subscription_message, market_tickers_file)
+            check_for_yaml_updates(websocket, subscription_message, tickers_filename)
         )
 
-        while not stop_event.is_set():  # Check for stop event
+        while True: 
             try:
-                data = await asyncio.wait_for(
-                    websocket.recv(), timeout=1.0
-                )  # Non-blocking receive
+                data = await asyncio.wait_for(websocket.recv(), timeout=1.0)
+                await queue.put(json.loads(data))
             except asyncio.TimeoutError:
-                continue  # Continue on timeout
-
-            json_data = json.loads(data)
-            timestamp = int(
-                datetime.datetime.now(datetime.timezone.utc).timestamp()
-            )  # Get current UTC timestamp as integer
-
-            # Process orderbook snapshot
-            if json_data["type"] == "orderbook_snapshot":
-                logging.info("snapshot msg rx")
-
-                market_ticker = json_data["msg"]["market_ticker"]
-                market_id = json_data["msg"]["market_id"]
-                sid = json_data["sid"]
-                seq = json_data["seq"]
-                yes_levels = convert_levels_to_string(
-                    json_data["msg"].get("yes", [])
-                )  # Convert "yes" levels to string
-                no_levels = convert_levels_to_string(
-                    json_data["msg"].get("no", [])
-                )  # Convert "no" levels to string
-
-                # Get or create market entry
-                market_db_id = get_or_create_market_id(cursor, market_id, market_ticker)
-
-                cursor.execute(
-                    """
-                    INSERT INTO snapshots (sid, seq, market_id, yes, no, timestamp)
-                    VALUES (?, ?, ?, ?, ?, ?)
-                """,
-                    (sid, seq, market_db_id, yes_levels, no_levels, timestamp),
-                )
-
-            # Process orderbook delta
-            elif json_data["type"] == "orderbook_delta":
-                logging.info("delta msg rx")
-
-                market_ticker = json_data["msg"]["market_ticker"]
-                market_id = json_data["msg"]["market_id"]
-                sid = json_data["sid"]
-                seq = json_data["seq"]
-                price = json_data["msg"]["price"]
-                delta = json_data["msg"]["delta"]
-                side = (
-                    1 if json_data["msg"]["side"] == "yes" else 0
-                )  # Store side as 1 (yes) or 0 (no)
-
-                # Get or create market entry
-                market_db_id = get_or_create_market_id(cursor, market_id, market_ticker)
-
-                cursor.execute(
-                    """
-                    INSERT INTO deltas (sid, seq, market_id, price, delta, side, timestamp)
-                    VALUES (?, ?, ?, ?, ?, ?, ?)
-                """,
-                    (sid, seq, market_db_id, price, delta, side, timestamp),
-                )
-
-            conn.commit()
+                continue
+            except websockets.ConnectionClosed:
+                logging.warning("WebSocket connection closed")
+                break
 
 
-# Main function to start the process
-def main():
-    # Handle signals for graceful shutdown
-    signal.signal(signal.SIGINT, signal_handler)  # Ctrl+C
-    signal.signal(signal.SIGTERM, signal_handler)  # Termination signals
+# Main function to run the coroutines
+async def main(api_token, market_tickers_file):
+    queue = asyncio.Queue()
+    orderbook = Orderbook(bids=[], asks=[])
+    deltas = []
 
-    api_token = get_kalshi_api_token(EMAIL, PASSWORD)  # Retrieve API token
-    conn = setup_database(enable_wal=True)  # Set up the database
-    market_tickers_file = "tickers.yaml"  # Path to the YAML file with market tickers
-
-    try:
-        asyncio.run(connect_and_stream(api_token, conn, market_tickers_file))
-    except Exception as e:
-        logging.error(f"Error: {e}")
-    finally:
-        conn.close()  # Close the SQLite connection when done
-        logging.info("Program terminated.")
+    await asyncio.gather(
+        websocket_listener(api_token, queue, market_tickers_file),
+        update_handler(queue, orderbook, deltas)
+    )
 
 
 if __name__ == "__main__":
-    main()
+    # Load environment variables and get API token
+    EMAIL = os.getenv("EMAIL")
+    PASSWORD = os.getenv("PASSWORD")
+    api_token = get_kalshi_api_token(EMAIL, PASSWORD)
+    market_tickers_file = "tickers.yaml"
+
+    # Handle signals for graceful shutdown
+    signal.signal(signal.SIGINT, signal_handler)
+    signal.signal(signal.SIGTERM, signal_handler)
+
+    try:
+        asyncio.run(main(api_token, market_tickers_file))
+    except Exception as e:
+        logging.error(f"Error: {e}")
+    finally:
+        logging.info("Program terminated.")
