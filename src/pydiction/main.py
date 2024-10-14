@@ -92,7 +92,7 @@ async def check_for_yaml_updates(websocket, subscription_message, market_tickers
 
 # Save snapshots as json
 def save_snapshot(snapshot: Dict) -> None:
-    with open("snapshot.json", "a") as f:
+    with open("data/snapshot.json", "a") as f:
         json.dump(snapshot, f)
         f.write("\n")
 
@@ -100,7 +100,7 @@ def save_snapshot(snapshot: Dict) -> None:
 # Save deltas as json (every ~100 updates or on termination)
 def save_deltas(deltas: List[Dict]) -> None:
     if deltas:
-        with open("deltas.json", "a") as f:
+        with open("data/deltas.json", "a") as f:
             for delta in deltas:
                 json.dump(delta, f)
                 f.write("\n")
