@@ -1,9 +1,16 @@
 from collections import namedtuple
+import logging
 from typing import Dict, List
 
 
 Level = namedtuple("Level", ["price", "quantity"])
 Delta = namedtuple("Delta", ["price", "delta"])
+
+
+# Configure basic logging
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s [BOOK] [%(levelname)s] %(message)s"
+)
 
 
 class Orderbook:
@@ -12,6 +19,7 @@ class Orderbook:
     """
 
     def __init__(self, bids: List[Level], asks: List[Level]) -> None:
+        logging.info("book created")
         self.bids = bids
         self.asks = asks
 
@@ -29,8 +37,6 @@ class Orderbook:
     def update(self, book: List[Level], delta: Delta) -> None:
         """
         Updated the book with any new delta.
-
-        TODO: "orderbook_delta" messages always come one-at-a-time so we do not need to use `List[Delta]`
         """
         for i, level in enumerate(book):
             # If there is a matching price, update the quantity with the delta
@@ -66,7 +72,7 @@ class Orderbook:
             case "asks":
                 self.asks = snapshot
             case _:
-                print("Encountered undefined `side` while applying orderbook refresh")
+                logging.error(f"Encountered undefined `side = {side}` while applying orderbook refresh")
 
         # Sort the book
         self.sort()
@@ -93,7 +99,7 @@ class Orderbook:
                 if no_levels:
                     self.refresh(side="asks", snapshot=no_levels)
 
-                print("snapshot processed")
+                logging.info("book snapshot rx")
 
             case "orderbook_delta":
                 # Create the Delta object
@@ -105,7 +111,7 @@ class Orderbook:
                 elif recv["msg"]["side"] == "no":
                     self.update(self.asks, delta=delta)
 
-                print("delta processed")
+                logging.info("book delta rx")
 
             case _:
-                print("unknown element encountered")
+                logging.warning("unrecognized message rx")
