@@ -95,47 +95,52 @@ async def websocket_listener(
     headers = kalshi_api.websocket_auth_headers()
     tickers = load_market_tickers(tickers_filename)
 
-    try:
-        async with websockets.connect(
-            "wss://trading-api.kalshi.com/trade-api/ws/v2",
-            extra_headers=headers,
-            ping_interval=10,
-        ) as websocket:
-            logging.info(f"Connected to Exchange WebSocket on `{BASE_URL}`")
+    while not stop_event.is_set():
+        try:
+            async with websockets.connect(
+                "wss://trading-api.kalshi.com/trade-api/ws/v2",
+                extra_headers=headers,
+                ping_interval=30,  # Adjust the ping interval
+            ) as websocket:
+                logging.info(f"Connected to Exchange WebSocket on `{BASE_URL}`")
 
-            # Send subscription message
-            subscription_message = {
-                "id": 1,  # Sequential command ID
-                "cmd": "subscribe",
-                "params": {
-                    "channels": ["orderbook_delta"],
-                    "market_tickers": tickers,
-                },
-            }
+                # Send subscription message
+                subscription_message = {
+                    "id": 1,  # Sequential command ID
+                    "cmd": "subscribe",
+                    "params": {
+                        "channels": ["orderbook_delta"],
+                        "market_tickers": tickers,
+                    },
+                }
 
-            await websocket.send(json.dumps(subscription_message))
-            logging.info(f"Subscribing to 'orderbook_delta' channel for {tickers}")
+                await websocket.send(json.dumps(subscription_message))
+                logging.info(f"Subscribing to 'orderbook_delta' channel for {tickers}")
 
-            # Start background task that will check for YAML updates periodically
-            _yaml_task = asyncio.create_task(
-                check_for_yaml_updates(websocket, subscription_message, tickers_filename)
-            )
+                # Start background task that will check for YAML updates periodically
+                _yaml_task = asyncio.create_task(
+                    check_for_yaml_updates(websocket, subscription_message, tickers_filename)
+                )
 
-            while not stop_event.is_set():
-                try:
-                    data = await asyncio.wait_for(websocket.recv(), timeout=5.0)
-                    await queue.put(json.loads(data))
-                except asyncio.TimeoutError:
-                    continue
-                except websockets.ConnectionClosed as e:
-                    logging.warning(f"WebSocket connection closed: {e.code} - {e.reason}")
-                    break
+                while not stop_event.is_set():
+                    try:
+                        data = await asyncio.wait_for(websocket.recv(), timeout=5.0)
+                        await queue.put(json.loads(data))
+                    except asyncio.TimeoutError:
+                        continue
+                    except websockets.ConnectionClosed as e:
+                        logging.warning(f"WebSocket connection closed: {e.code} - {e.reason}")
+                        if e.code == 1006:
+                            logging.warning("Abnormal closure (1006), attempting to reconnect...")
+                        break
 
-    except Exception as e:
-        logging.error(f"WebSocket error: {e}")
+        except Exception as e:
+            logging.error(f"WebSocket error: {e}")
+            await asyncio.sleep(5)  # Wait before retrying
+        finally:
+            logging.info("Attempting to reconnect...")
+            await asyncio.sleep(5)  # Wait before attempting to reconnect
 
-    finally:
-        logging.info("Exiting WebSocket listener...")
 
 
 async def update_handler(
