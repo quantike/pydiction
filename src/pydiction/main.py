@@ -95,12 +95,14 @@ async def websocket_listener(
     headers = kalshi_api.websocket_auth_headers()
     tickers = load_market_tickers(tickers_filename)
 
+    retry_sec = 1.0
+
     while not stop_event.is_set():
         try:
             async with websockets.connect(
                 "wss://trading-api.kalshi.com/trade-api/ws/v2",
                 extra_headers=headers,
-                ping_interval=30,  # Adjust the ping interval
+                ping_interval=10,  # Adjust the ping interval
             ) as websocket:
                 logging.info(f"Connected to Exchange WebSocket on `{BASE_URL}`")
 
@@ -136,11 +138,10 @@ async def websocket_listener(
 
         except Exception as e:
             logging.error(f"WebSocket error: {e}")
-            await asyncio.sleep(5)  # Wait before retrying
+            await asyncio.sleep(retry_sec)  # Wait before retrying
         finally:
             logging.info("Attempting to reconnect...")
-            await asyncio.sleep(5)  # Wait before attempting to reconnect
-
+            await asyncio.sleep(retry_sec)  # Wait before attempting to reconnect
 
 
 async def update_handler(
