@@ -2,7 +2,6 @@ import asyncio
 from typing import Dict, List
 import websockets
 import json
-import requests
 import datetime
 import os
 import yaml
@@ -41,24 +40,6 @@ kalshi_api = KalshiAPI()
 def signal_handler(sig, frame):
     logging.info("Gracefully shutting down...")
     stop_event.set()
-
-
-# Logs in to exchange via email + password, returns the session token
-def get_kalshi_api_token(email, password):
-    url = f"https://{BASE_URL}.kalshi.com/trade-api/v2/login"
-    headers = {
-        "accept": "application/json",
-        "content-type": "application/json",
-    }
-    data = json.dumps({"email": email, "password": password})
-    response = requests.post(url, headers=headers, data=data)
-
-    if response.status_code == 200:
-        logging.info("Logged in to Kalshi Exchange")
-    else:
-        raise Exception("Failed to log in: " + response.text)
-
-    return response.json()["token"]
 
 
 # Function to load latest market tickers from a YAML file
@@ -118,6 +99,7 @@ async def websocket_listener(
         async with websockets.connect(
             "wss://trading-api.kalshi.com/trade-api/ws/v2",
             extra_headers=headers,
+            ping_interval=10,
         ) as websocket:
             logging.info(f"Connected to Exchange WebSocket on `{BASE_URL}`")
 
@@ -141,12 +123,12 @@ async def websocket_listener(
 
             while not stop_event.is_set():
                 try:
-                    data = await asyncio.wait_for(websocket.recv(), timeout=1.0)
+                    data = await asyncio.wait_for(websocket.recv(), timeout=5.0)
                     await queue.put(json.loads(data))
                 except asyncio.TimeoutError:
                     continue
-                except websockets.ConnectionClosed:
-                    logging.warning("WebSocket connection closed")
+                except websockets.ConnectionClosed as e:
+                    logging.warning(f"WebSocket connection closed: {e.code} - {e.reason}")
                     break
 
     except Exception as e:
@@ -161,7 +143,7 @@ async def update_handler(
 ) -> None:
     while not stop_event.is_set() or not queue.empty():
         try:
-            message = await asyncio.wait_for(queue.get(), timeout=1.0)
+            message = await asyncio.wait_for(queue.get(), timeout=5.0)
         except asyncio.TimeoutError:
             continue
 
