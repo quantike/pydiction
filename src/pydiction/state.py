@@ -16,14 +16,22 @@ class State:
     TICKERS_PATH = "tickers.yaml"
 
     def __init__(self) -> None:
+        self.email = os.getenv("KALSHI_EMAIL")
+        self.password = os.getenv("KALSHI_PASSWORD")
         self.access_key = os.getenv("KALSHI_ACCESS_KEY")
         self.private_key_path = os.getenv("KALSHI_PRIVATE_KEY_PATH")
 
+        # Check for email and password
+        if self.email is None: 
+            raise ValueError("Environment variable KALSHI_EMAIL is not set or is None")
+        if self.password is None:
+            raise ValueError("Environment variable KALSHI_PASSWORD is not set or is None")
+
         # Check if either access_key or private_key_path is None
         if self.access_key is None:
-            raise ValueError("Environment variable KALSHI_ACCESS_KEY is not set or is None.")
+            raise ValueError("Environment variable KALSHI_ACCESS_KEY is not set or is None")
         if self.private_key_path is None:
-            raise ValueError("Environment variable KALSHI_PRIVATE_KEY_PATH is not set or is None.")
+            raise ValueError("Environment variable KALSHI_PRIVATE_KEY_PATH is not set or is None")
 
         # Check if either yaml path is invalid or None
         if not self.CONFIGURATION_PATH:
