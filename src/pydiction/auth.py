@@ -1,4 +1,3 @@
-
 import base64
 import requests
 import datetime
@@ -29,7 +28,7 @@ class Authenticator:
     def _load_private_key_from_file(self, file_path: str) -> rsa.RSAPrivateKey:
         """
         Loads the private key from the KALSHI_PRIVATE_KEY_PATH (which should be in your .env).
-        
+
         NOTE: This was ripped from the Kalshi example: <https://trading-api.readme.io/reference/api-keys>
         """
         with open(file_path, "rb") as key_file:
@@ -81,7 +80,7 @@ class Authenticator:
         Create the headers needed for API requests.
 
         :param method: The HTTP method being used, e.g. "GET".
-        :param path: The API path being accessed. 
+        :param path: The API path being accessed.
 
         :return: Dictionary containing the necessary headers.
         """
@@ -114,7 +113,7 @@ class Authenticator:
 
         additional_headers = {
             "email": self.state.email,
-            "password": self.state.password
+            "password": self.state.password,
         }
 
         headers = self.create_headers(method, path) | additional_headers

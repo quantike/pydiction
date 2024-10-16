@@ -5,8 +5,7 @@ from pydiction.auth import Authenticator
 from pydiction.state import State
 
 
-class KalshiClient: 
-
+class KalshiClient:
     def __init__(self, state: State, auth: Authenticator) -> None:
         self.state = state
         self.auth = auth
@@ -14,7 +13,9 @@ class KalshiClient:
 
     def _login(self) -> bool:
         # Retrieve the response body from a login attempt
-        login_response: Dict[str, str] = self.auth.get_auth_headers_rest(self.state.rest_base_url)
+        login_response: Dict[str, str] = self.auth.get_auth_headers_rest(
+            self.state.rest_base_url
+        )
 
         # If the "token" response object exists, return True
         if login_response.get("token"):
@@ -36,7 +37,7 @@ class KalshiClient:
 
     def get_exchange_status(self):
         """
-        Requests the current exchange status. 
+        Requests the current exchange status.
 
         WARNING: This is an undocumented endpoint I happened upon.
         """
@@ -60,7 +61,7 @@ class KalshiClient:
 
     def get_portfolio_balance(self):
         """
-        Requests the portfolio balance for a logged-in user. Returns the balance in dollar cents, 
+        Requests the portfolio balance for a logged-in user. Returns the balance in dollar cents,
         and the available payout in dollar cents.
         """
         method = "GET"
