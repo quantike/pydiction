@@ -72,7 +72,9 @@ class Orderbook:
             case "asks":
                 self.asks = snapshot
             case _:
-                logging.error(f"Encountered undefined `side = {side}` while applying orderbook refresh")
+                logging.error(
+                    f"Encountered undefined `side = {side}` while applying orderbook refresh"
+                )
 
         # Sort the book
         self.sort()

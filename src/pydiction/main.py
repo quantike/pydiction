@@ -121,7 +121,9 @@ async def websocket_listener(
 
                 # Start background task that will check for YAML updates periodically
                 _yaml_task = asyncio.create_task(
-                    check_for_yaml_updates(websocket, subscription_message, tickers_filename)
+                    check_for_yaml_updates(
+                        websocket, subscription_message, tickers_filename
+                    )
                 )
 
                 while not stop_event.is_set():
@@ -131,9 +133,13 @@ async def websocket_listener(
                     except asyncio.TimeoutError:
                         continue
                     except websockets.ConnectionClosed as e:
-                        logging.warning(f"WebSocket connection closed: {e.code} - {e.reason}")
+                        logging.warning(
+                            f"WebSocket connection closed: {e.code} - {e.reason}"
+                        )
                         if e.code == 1006:
-                            logging.warning("Abnormal closure (1006), attempting to reconnect...")
+                            logging.warning(
+                                "Abnormal closure (1006), attempting to reconnect..."
+                            )
                         break
 
         except Exception as e:
@@ -206,11 +212,10 @@ async def main(kalshi_api, market_tickers_file):
     listener_task = asyncio.create_task(
         websocket_listener(kalshi_api, queue, market_tickers_file)
     )
-    handler_task = asyncio.create_task(
-        update_handler(queue, orderbook, deltas)
-    )
+    handler_task = asyncio.create_task(update_handler(queue, orderbook, deltas))
 
     await asyncio.wait([listener_task, handler_task], return_when=asyncio.ALL_COMPLETED)
+
 
 if __name__ == "__main__":
     # Load environment variables and get API token

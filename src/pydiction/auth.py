@@ -105,9 +105,9 @@ class KalshiAPI:
 
     def websocket_auth_headers(self):
         """
-        UNDOCUMENTED! 
+        UNDOCUMENTED!
 
-        This was found in the Kalshi #dev Discord channel: 
+        This was found in the Kalshi #dev Discord channel:
 
         > "You have to use "GET" as the method and "/trade-api/ws/v2" as the path when building the string that gets hashed and signed."
         """
@@ -135,4 +135,3 @@ class KalshiAPI:
         # Output the response
         print("Status Code:", response.status_code)
         print("Response Body:", response.text)
-
