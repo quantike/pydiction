@@ -69,13 +69,3 @@ class KalshiClient:
         headers = self.auth.create_headers(method, path)
 
         return requests.get(self.state.rest_base_url + path, headers=headers)
-
-
-if __name__ == '__main__':
-    state = State()
-    auth = Authenticator(state)
-
-    client = KalshiClient(state, auth)
-
-    print(client.get_exchange_status())
-    print(client.get_portfolio_balance())
