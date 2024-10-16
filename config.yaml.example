@@ -1,0 +1,17 @@
+# Options: ["LX", "KX"]
+# 
+# - "LX": Is the legacy LedgerX clearing house for Kalshi
+# - "KX": Is Kalshi's new clearing house, KLEAR
+exchange: ""
+
+# Options: ["https://api.elections.kalshi.com/trade-api/v2", "https://trading-api.kalshi.com/trade-api/v2"]
+#
+# - "https://api.elections.kalshi.com/trade-api/v2":
+# - "https://trading-api.kalshi.com/trade-api/v2":
+rest_base_url: ""
+
+# Options: ["wss://api.elections.kalshi.com/trade-api/ws/v2", "wss://trading-api.kalshi.com/trade-api/ws/v2"]
+#
+# - "wss://api.elections.kalshi.com/trade-api/ws/v2":
+# - "wss://trading-api.kalshi.com/trade-api/ws/v2":
+ws_base_url: ""
