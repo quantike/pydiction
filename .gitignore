@@ -18,3 +18,6 @@ notebooks/*
 
 # .env file(s)
 *.env
+
+# data directory
+data/*
