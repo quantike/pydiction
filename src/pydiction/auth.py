@@ -1,4 +1,4 @@
-import os
+
 import base64
 import requests
 import datetime
@@ -14,8 +14,6 @@ from pydiction.state import State
 
 # Load environment variables from the .env file
 load_dotenv()
-
-BASE_URL = os.getenv("KALSHI_BASE_URL")
 
 
 class Authenticator:
@@ -98,9 +96,9 @@ class Authenticator:
 
         # Return the headers
         headers = {
-            "KALSHI-ACCESS-KEY": self.state.access_key,
-            "KALSHI-ACCESS-SIGNATURE": sig,
-            "KALSHI-ACCESS-TIMESTAMP": timestampt_str,
+            "KALSHI-ACCESS-KEY": str(self.state.access_key),
+            "KALSHI-ACCESS-SIGNATURE": str(sig),
+            "KALSHI-ACCESS-TIMESTAMP": str(timestampt_str),
         }
 
         return headers
@@ -112,9 +110,14 @@ class Authenticator:
         :param base_url (str): The base URL for the REST endpoint. Dependent on `exchange` from `State`.
         """
         method = "POST"
-        path = "/login"
+        path = "/trade-api/v2/login"
 
-        headers = self.create_headers(method, path)
+        additional_headers = {
+            "email": self.state.email,
+            "password": self.state.password
+        }
+
+        headers = self.create_headers(method, path) | additional_headers
 
         response = requests.post(base_url + path, headers=headers)
 
