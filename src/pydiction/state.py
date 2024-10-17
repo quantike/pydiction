@@ -1,6 +1,6 @@
 import asyncio
 import os
-from typing import Dict
+from typing import Dict, List
 from dotenv import load_dotenv
 
 from pydiction.utils import load_from_yaml
@@ -51,7 +51,7 @@ class State:
             self.exchange = config["exchange"]
             self.rest_base_url = config["rest_base_url"]
             self.ws_base_url = config["ws_base_url"]
-            self.tickers = tickers["market_tickers"]
+            self.tickers: List[str] = tickers["market_tickers"]
 
         # eventually, load strategy related params below?
 
