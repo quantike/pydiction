@@ -14,4 +14,14 @@ rest_base_url: ""
 #
 # - "wss://api.elections.kalshi.com/trade-api/ws/v2":
 # - "wss://trading-api.kalshi.com/trade-api/ws/v2":
-ws_base_url: ""
+ws_uri: ""
+
+# Options: Any valid float or integer. Recommended to keep above 1s.
+#
+# Longer times give program a larger delay before a reconnection attempt.
+reconnection_interval: 1.0
+
+# Options: Any valid float or integer. Recommended to keep above 1s.
+#
+# Longer times give websocket more time to respond to messages. Shorter times could lead to more reconnects.
+confirmation_timeout: 1.0
