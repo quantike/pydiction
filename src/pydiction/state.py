@@ -50,8 +50,10 @@ class State:
         if not refresh:
             self.exchange = config["exchange"]
             self.rest_base_url = config["rest_base_url"]
-            self.ws_base_url = config["ws_base_url"]
+            self.ws_uri = config["ws_uri"]
             self.tickers: List[str] = tickers["market_tickers"]
+            self.reconnection_interval = config["reconnection_interval"]
+            self.confirmation_timeout = config["confirmation_timeout"]
 
         # eventually, load strategy related params below?
 
