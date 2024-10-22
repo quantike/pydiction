@@ -162,8 +162,9 @@ class KalshiWs:
             # Mark the valid sids as pending
             self.pending_unsubscriptions.update(valid_subscription_ids)
 
+            # NOTE: We do not apply a unique id to this message since it will make the subscription_id diverge
+            # from the id that we track locally in self.subscriptions
             unsubscribe_message = {
-                "id": self.generate_subscription_id(),
                 "cmd": "unsubscribe",
                 "params": {
                     "sids": valid_subscription_ids
