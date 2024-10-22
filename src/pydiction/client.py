@@ -1,3 +1,4 @@
+import json
 from typing import Dict
 import requests
 
@@ -23,6 +24,17 @@ class KalshiClient:
 
         # Else, login failed
         return False
+
+    def get_events(self):
+        raise NotImplementedError
+
+    def get_event(self, event_ticker: str):
+        method = "GET"
+        path = f"/trade-api/v2/events/{event_ticker}"
+
+        headers = self.auth.create_headers(method, path)
+
+        return requests.get(self.state.rest_base_url + path, headers=headers)
 
     def get_exchange_schedule(self):
         """
@@ -70,3 +82,4 @@ class KalshiClient:
         headers = self.auth.create_headers(method, path)
 
         return requests.get(self.state.rest_base_url + path, headers=headers)
+
