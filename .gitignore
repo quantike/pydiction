@@ -24,3 +24,6 @@ notebooks/*
 
 # data directory
 data/*
+
+# don't commit scratch files
+scratch.*
