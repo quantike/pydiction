@@ -61,18 +61,21 @@ class KalshiWs:
         return self._id_counter
 
 
-    async def add_subscription(self, channels: List[str]):
+    async def add_subscription(self, channels: List[str], all_markets: bool = False):
         subscription_id = self.generate_subscription_id()
-        subscription = Subscription(channels=channels, tickers=self.state.tickers, created_ts=time.time(), updated_ts=time.time(), active=False)
+        subscription = Subscription(channels=channels, tickers=self.state.tickers if not all_markets else ["all_markets"], created_ts=time.time(), updated_ts=time.time(), active=False)
 
         subscription_message = {
             "id": subscription_id,
             "cmd": "subscribe",
             "params": {
                 "channels": channels,
-                "market_tickers": self.state.tickers
             }
         }
+
+        if not all_markets:
+            # If we are not in all_markets mode, update subscription_message with tickers from state
+            subscription_message["params"]["market_tickers"] = self.state.tickers
 
         await self.websocket.send(json.dumps(subscription_message))
         
@@ -244,44 +247,3 @@ class KalshiWs:
                 subscription_id = message.get("sid")
                 if subscription_id is not None:
                     await self._handle_forced_unsubscription(subscription_id)
-       
-# Main function to run the WebSocket client
-async def main():
-    state = State()
-    auth = Authenticator(state)
-
-    # Create an instance of WebSocketClient with the factory
-    client = KalshiWs(state=state, auth=auth, websocket_factory=websocket_factory)
-    
-    # Connect to the WebSocket server
-    await client.connect()
-
-    # Add multiple subscriptions (example usage)
-    subscription_1 = await client.add_subscription(["orderbook_delta"])
-    subscription_2 = await client.add_subscription(["ticker"])
-    subscription_3 = await client.add_subscription(["trade"])
-
-    # Start monitoring the connection health in the background
-    asyncio.create_task(client.monitor_connection_health())
-
-    # Wait a little while before unsubscribing
-    await asyncio.sleep(5)
-
-    # Unsubscribe from one of the subscriptions
-    await client.unsubscribe([subscription_2])
-
-    await asyncio.sleep(3)
-    await client.unsubscribe([subscription_3])
-
-    await asyncio.sleep(3)
-    await client.unsubscribe([subscription_1])
-
-    # Keep the main task alive (e.g., awaiting on subscriptions)
-    try:
-        await asyncio.Future()  # Keeps the script running
-    except asyncio.CancelledError:
-        print("Main function was cancelled, shutting down gracefully.")
-
-# Run the event loop
-asyncio.run(main())
-
