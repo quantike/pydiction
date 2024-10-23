@@ -15,6 +15,51 @@ Subscription = namedtuple(
 )
 
 
+class KalshiWsMessageHandler:
+    def __init__(self) -> None:
+        self.message_type_map = {
+            "orderbook_snapshot": self._handle_snapshot_,
+            "orderbook_delta": self._handle_delta_,
+            "ticker": self._handle_ticker_,
+            "trade": self._handle_trade_,
+            "fill": self._handle_fill_,
+            "market_lifecycle": self._handle_market_lifecycle_,
+        }
+
+    def handle_message(self, message: Dict) -> None:
+        message_type: str = message.get("type", "")
+        handler = self.message_type_map.get(message_type, self._handle_unexpected_)
+        handler(message)
+
+    def _handle_snapshot_(self, message: Dict) -> None:
+        print(f"snapshot: {message}")
+        pass 
+
+    def _handle_delta_(self, message: Dict) -> None:
+        print(f"delta: {message}")
+        pass
+
+    def _handle_ticker_(self, message: Dict) -> None:
+        print(f"ticker: {message}")
+        pass
+
+    def _handle_trade_(self, message: Dict) -> None:
+        print(f"trade: {message}")
+        pass
+
+    def _handle_fill_(self, message: Dict) -> None:
+        print(f"fill: {message}")
+        pass
+
+    def _handle_market_lifecycle_(self, message: Dict) -> None:
+        print(f"lifecycle: {message}")
+        pass
+
+    def _handle_unexpected_(self, message: Dict) -> None:
+        print(f"unexpected: {message}")
+        pass
+
+
 async def websocket_factory(uri: str, extra_headers: Optional[Dict[str, str]]):
     """Factory function that creates new websocket connections."""
     try:
@@ -36,6 +81,9 @@ class KalshiWs:
         self.subscriptions: Dict[int, Subscription] = {}
         self.pending_unsubscriptions: Set = set()
         self._id_counter = 0
+
+        # Set up message handler for message dispatch
+        self.handler = KalshiWsMessageHandler()
 
     async def connect(self):
         headers = self.auth.get_auth_headers_ws()
@@ -267,15 +315,28 @@ class KalshiWs:
 
     async def handle_message(self, message: Dict):
         """Handles messages received from the server."""
-        print(f"handler rx: {message}")
         match message.get("type"):
             # Handles subscriptions
             case "subscribed":
                 subscription_id = message.get("id")
                 if subscription_id is not None:
-                    print(message)
+                    print(f"subscription created to channel: {message["msg"]["channel"]}")
             # Handles un-subcriptions
             case "unsubscribed":
                 subscription_id = message.get("sid")
                 if subscription_id is not None:
                     await self._handle_forced_unsubscription(subscription_id)
+            # Handles subscription updates
+            case "ok":
+                subscription_id = message.get("id")
+                if subscription_id is not None:
+                    print(f"subscription(s) updated with ticker(s): {message["market_tickers"]}")
+            # Handles errors by logging the code and message 
+            case "error":
+                subscription_id = message.get("id")
+                if subscription_id is not None:
+                    print(f"error received: {message["msg"]}")
+            case _:
+                self.handler.handle_message(message)
+
+
