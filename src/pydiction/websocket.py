@@ -231,7 +231,7 @@ class KalshiWs:
             async for message in self.websocket:
                 await self.handle_message(json.loads(message))
         except websockets.ConnectionClosed:
-            print("Connection closed, reconnecting...")
+            print("Connection closed during listen, reconnecting...")
             await self._reconnect()
 
     async def handle_message(self, message: Dict):
