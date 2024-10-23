@@ -81,4 +81,3 @@ class KalshiClient:
         headers = self.auth.create_headers(method, path)
 
         return requests.get(self.state.rest_base_url + path, headers=headers)
-

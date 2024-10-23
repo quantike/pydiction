@@ -10,7 +10,9 @@ from pydiction.state import State
 from pydiction.auth import Authenticator
 
 
-Subscription = namedtuple("Subscription", ["channels", "tickers", "created_ts", "updated_ts", "active"])
+Subscription = namedtuple(
+    "Subscription", ["channels", "tickers", "created_ts", "updated_ts", "active"]
+)
 
 
 async def websocket_factory(uri: str, extra_headers: Optional[Dict[str, str]]):
@@ -25,8 +27,9 @@ async def websocket_factory(uri: str, extra_headers: Optional[Dict[str, str]]):
 
 
 class KalshiWs:
-
-    def __init__(self, state: State, auth: Authenticator,  websocket_factory: Callable) -> None:
+    def __init__(
+        self, state: State, auth: Authenticator, websocket_factory: Callable
+    ) -> None:
         self.state = state
         self.auth = auth
         self.websocket_factory = websocket_factory
@@ -36,7 +39,9 @@ class KalshiWs:
 
     async def connect(self):
         headers = self.auth.get_auth_headers_ws()
-        self.websocket: websockets.WebSocketClientProtocol = await self.websocket_factory(self.state.ws_uri, extra_headers=headers)
+        self.websocket: websockets.WebSocketClientProtocol = (
+            await self.websocket_factory(self.state.ws_uri, extra_headers=headers)
+        )
 
         # Start listening for messages from the server
         asyncio.create_task(self.listen())
@@ -47,30 +52,37 @@ class KalshiWs:
         print("Reconnecting...")
 
         while True:
-            try: 
+            try:
                 await self.connect()
                 print("Reconnection successful")
                 await self.resubscribe_all()
                 break
-            except Exception as e: 
-                print(f"Reconnect failed: {e}, retrying in {self.state.reconnection_interval}s...")
+            except Exception as e:
+                print(
+                    f"Reconnect failed: {e}, retrying in {self.state.reconnection_interval}s..."
+                )
                 await asyncio.sleep(self.state.reconnection_interval)
 
     def generate_subscription_id(self) -> int:
         self._id_counter += 1
         return self._id_counter
 
-
     async def add_subscription(self, channels: List[str], all_markets: bool = False):
         subscription_id = self.generate_subscription_id()
-        subscription = Subscription(channels=channels, tickers=self.state.tickers if not all_markets else ["all_markets"], created_ts=time.time(), updated_ts=time.time(), active=False)
+        subscription = Subscription(
+            channels=channels,
+            tickers=self.state.tickers if not all_markets else ["all_markets"],
+            created_ts=time.time(),
+            updated_ts=time.time(),
+            active=False,
+        )
 
         subscription_message = {
             "id": subscription_id,
             "cmd": "subscribe",
             "params": {
                 "channels": channels,
-            }
+            },
         }
 
         if not all_markets:
@@ -78,10 +90,12 @@ class KalshiWs:
             subscription_message["params"]["market_tickers"] = self.state.tickers
 
         await self.websocket.send(json.dumps(subscription_message))
-        
+
         # Update the subscription locally
         self.subscriptions[subscription_id] = subscription
-        self.subscriptions[subscription_id] = subscription._replace(updated_ts=time.time(), active=True)
+        self.subscriptions[subscription_id] = subscription._replace(
+            updated_ts=time.time(), active=True
+        )
 
         return subscription_id
 
@@ -92,7 +106,9 @@ class KalshiWs:
             print(f"Subscription {subscription_id} not confirmed, reconnecting...")
             await self._reconnect()
 
-    async def update_subscription(self, subscription_id: int, updated_tickers: List[str]):
+    async def update_subscription(
+        self, subscription_id: int, updated_tickers: List[str]
+    ):
         """
         Updates a subscription by adding or deleting tickers from it. Infers the correct action.
 
@@ -121,10 +137,12 @@ class KalshiWs:
                 "id": self.generate_subscription_id(),
                 "cmd": "update_subscription",
                 "params": {
-                    "sids": [subscription_id],  # presently, support single subscription updates 
+                    "sids": [
+                        subscription_id
+                    ],  # presently, support single subscription updates
                     "market_tickers": list(tickers_to_add),
-                    "action": "add_markets"
-                }
+                    "action": "add_markets",
+                },
             }
 
             # TODO: Actually send the add_message to the ws and handle success/failure
@@ -138,26 +156,34 @@ class KalshiWs:
                 "id": self.generate_subscription_id(),
                 "cmd": "update_subscription",
                 "params": {
-                    "sids": [subscription_id],  # presently, support single subscription updates 
+                    "sids": [
+                        subscription_id
+                    ],  # presently, support single subscription updates
                     "market_tickers": list(tickers_to_delete),
-                    "action": "delete_markets"
-                }
+                    "action": "delete_markets",
+                },
             }
-            
+
             # TODO: Actually send the delete_message to the ws and handle success/failure
             await self.websocket.send(json.dumps(delete_message))
 
             actions_performed.append("delete_markets")
 
         # Update the subscription locally
-        self.subscriptions[subscription_id] = subscription._replace(tickers=list(new_tickers), updated_ts=time.time())
+        self.subscriptions[subscription_id] = subscription._replace(
+            tickers=list(new_tickers), updated_ts=time.time()
+        )
 
         return actions_performed
 
     async def unsubscribe(self, subscription_ids: List[int]):
         """Unsubscribe from one or more subscriptions by their subscription ID."""
-        valid_subscription_ids = [subscription_id for subscription_id in subscription_ids if subscription_id in self.subscriptions]
-        
+        valid_subscription_ids = [
+            subscription_id
+            for subscription_id in subscription_ids
+            if subscription_id in self.subscriptions
+        ]
+
         if valid_subscription_ids:
             # Mark the valid sids as pending
             self.pending_unsubscriptions.update(valid_subscription_ids)
@@ -166,9 +192,7 @@ class KalshiWs:
             # from the id that we track locally in self.subscriptions
             unsubscribe_message = {
                 "cmd": "unsubscribe",
-                "params": {
-                    "sids": valid_subscription_ids
-                }
+                "params": {"sids": valid_subscription_ids},
             }
 
             await self.websocket.send(json.dumps(unsubscribe_message))
@@ -184,9 +208,14 @@ class KalshiWs:
         """Attemps to re-subscribe if the server sends an unsubscribe event."""
         # Only handle forced unsubscription if it was unintentional. We check this by making sure
         # that the subscription_id has not been added to our pending unsubscription set.
-        if subscription_id in self.subscriptions and subscription_id not in self.pending_unsubscriptions:
+        if (
+            subscription_id in self.subscriptions
+            and subscription_id not in self.pending_unsubscriptions
+        ):
             subscription = self.subscriptions[subscription_id]
-            print(f"Forced unsubscription detected for SID: {subscription_id}, attempting re-subscribe...")
+            print(
+                f"Forced unsubscription detected for SID: {subscription_id}, attempting re-subscribe..."
+            )
             await self.add_subscription(channels=subscription.channels)
         elif subscription_id in self.pending_unsubscriptions:
             # Remove subscription_id from pending since it is now handled
@@ -203,21 +232,23 @@ class KalshiWs:
                     "cmd": "subscribe",
                     "params": {
                         "channels": subscription.channels,
-                        "market_tickers": subscription.tickers
-                    }
+                        "market_tickers": subscription.tickers,
+                    },
                 }
 
                 await self.websocket.send(json.dumps(resubscription_message))
 
                 # Update subscriptions locally
-                # NOTE: The logic in only updating the `updated_ts` is that we might want to know just 
+                # NOTE: The logic in only updating the `updated_ts` is that we might want to know just
                 # how long we've been listening to a subscription via the `created_ts`.
-                self.subscriptions[subscription_id] = subscription._replace(updated_ts=time.time())
+                self.subscriptions[subscription_id] = subscription._replace(
+                    updated_ts=time.time()
+                )
 
     async def monitor_connection_health(self) -> None:
         """Monitors the connection's health and reconnects if the health has degraded."""
-        while True: 
-            await asyncio.sleep(10.0)  # waits 10 seconds then checks 
+        while True:
+            await asyncio.sleep(10.0)  # waits 10 seconds then checks
             try:
                 pong = await self.websocket.ping()
                 await pong
@@ -238,7 +269,7 @@ class KalshiWs:
         """Handles messages received from the server."""
         print(f"handler rx: {message}")
         match message.get("type"):
-            # Handles subscriptions 
+            # Handles subscriptions
             case "subscribed":
                 subscription_id = message.get("id")
                 if subscription_id is not None:
