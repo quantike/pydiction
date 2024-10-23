@@ -33,7 +33,7 @@ class KalshiWsMessageHandler:
 
     def _handle_snapshot_(self, message: Dict) -> None:
         print(f"snapshot: {message}")
-        pass 
+        pass
 
     def _handle_delta_(self, message: Dict) -> None:
         print(f"delta: {message}")
@@ -320,7 +320,9 @@ class KalshiWs:
             case "subscribed":
                 subscription_id = message.get("id")
                 if subscription_id is not None:
-                    print(f"subscription created to channel: {message["msg"]["channel"]}")
+                    print(
+                        f"subscription created to channel: {message["msg"]["channel"]}"
+                    )
             # Handles un-subcriptions
             case "unsubscribed":
                 subscription_id = message.get("sid")
@@ -330,13 +332,13 @@ class KalshiWs:
             case "ok":
                 subscription_id = message.get("id")
                 if subscription_id is not None:
-                    print(f"subscription(s) updated with ticker(s): {message["market_tickers"]}")
-            # Handles errors by logging the code and message 
+                    print(
+                        f"subscription(s) updated with ticker(s): {message["market_tickers"]}"
+                    )
+            # Handles errors by logging the code and message
             case "error":
                 subscription_id = message.get("id")
                 if subscription_id is not None:
                     print(f"error received: {message["msg"]}")
             case _:
                 self.handler.handle_message(message)
-
-
