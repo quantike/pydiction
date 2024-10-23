@@ -9,9 +9,9 @@ class KalshiClient:
     def __init__(self, state: State, auth: Authenticator) -> None:
         self.state = state
         self.auth = auth
-        self.logged_in = self._login()
+        self.is_connected = self._connect_()
 
-    def _login(self) -> bool:
+    def _connect_(self) -> bool:
         # Retrieve the response body from a login attempt
         login_response: Dict[str, str] = self.auth.get_auth_headers_rest(
             self.state.rest_base_url
