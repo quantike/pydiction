@@ -19,5 +19,11 @@ notebooks/*
 # .env file(s)
 *.env
 
+# config & tickers .yaml files 
+*.yaml
+
 # data directory
 data/*
+
+# don't commit scratch files
+scratch.*
