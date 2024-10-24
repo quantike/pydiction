@@ -94,7 +94,7 @@ class KalshiWs:
         # Start listening for messages from the server
         asyncio.create_task(self.listen())
 
-    async def _reconnect(self):
+    async def _reconnect_(self):
         """Close the connection and attempt to re-connect periodically."""
         await self.websocket.close()
         print("Reconnecting...")
@@ -152,7 +152,7 @@ class KalshiWs:
         await asyncio.sleep(self.state.confirmation_timeout)
         if subscription_id in self.subscriptions:
             print(f"Subscription {subscription_id} not confirmed, reconnecting...")
-            await self._reconnect()
+            await self._reconnect_()
 
     async def update_subscription(
         self, subscription_id: int, updated_tickers: List[str]
@@ -252,7 +252,7 @@ class KalshiWs:
         # TODO: we should return the successfull unsubscribes only
         return valid_subscription_ids
 
-    async def _handle_forced_unsubscription(self, subscription_id: int):
+    async def _handle_forced_unsubscription_(self, subscription_id: int):
         """Attemps to re-subscribe if the server sends an unsubscribe event."""
         # Only handle forced unsubscription if it was unintentional. We check this by making sure
         # that the subscription_id has not been added to our pending unsubscription set.
@@ -302,7 +302,7 @@ class KalshiWs:
                 await pong
             except Exception:
                 print("Connection health deteriorated, reconnecting...")
-                await self._reconnect()
+                await self._reconnect_()
 
     async def listen(self):
         """Listen for incoming messages from the WebSocket server."""
@@ -311,7 +311,7 @@ class KalshiWs:
                 await self.handle_message(json.loads(message))
         except websockets.ConnectionClosed:
             print("Connection closed during listen, reconnecting...")
-            await self._reconnect()
+            await self._reconnect_()
 
     async def handle_message(self, message: Dict):
         """Handles messages received from the server."""
@@ -327,7 +327,7 @@ class KalshiWs:
             case "unsubscribed":
                 subscription_id = message.get("sid")
                 if subscription_id is not None:
-                    await self._handle_forced_unsubscription(subscription_id)
+                    await self._handle_forced_unsubscription_(subscription_id)
             # Handles subscription updates
             case "ok":
                 subscription_id = message.get("id")
