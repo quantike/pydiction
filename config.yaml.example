@@ -4,10 +4,10 @@
 # - "KX": Is Kalshi's new clearing house, KLEAR
 exchange: ""
 
-# Options: ["https://api.elections.kalshi.com/trade-api/v2", "https://trading-api.kalshi.com/trade-api/v2"]
+# Options: ["https://api.elections.kalshi.com", "https://trading-api.kalshi.com"]
 #
-# - "https://api.elections.kalshi.com/trade-api/v2":
-# - "https://trading-api.kalshi.com/trade-api/v2":
+# - "https://api.elections.kalshi.com":
+# - "https://trading-api.kalshi.com":
 rest_base_url: ""
 
 # Options: ["wss://api.elections.kalshi.com/trade-api/ws/v2", "wss://trading-api.kalshi.com/trade-api/ws/v2"]
