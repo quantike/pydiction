@@ -1,6 +1,5 @@
 from typing import Tuple
-from pydiction.book import Orderbook
-
+from common.models.orderbook import Orderbook
 
 class BookFeatures:
     def __init__(self, orderbook: Orderbook) -> None:
