@@ -32,6 +32,10 @@ class Authenticator:
                 key_file.read(), password=None, backend=default_backend()
             )
 
+            # Check if the key is an instance of RSAPrivateKey
+            if not isinstance(private_key, rsa.RSAPrivateKey):
+                raise TypeError("The loaded private key is not an RSA private key.")
+
         return private_key
 
     def _sign_pss_text(self, private_key: rsa.RSAPrivateKey, text: str):
