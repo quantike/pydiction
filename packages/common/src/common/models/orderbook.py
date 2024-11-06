@@ -1,17 +1,7 @@
-from collections import namedtuple
-import logging
 from typing import Dict, List
 
-
-Level = namedtuple("Level", ["price", "quantity"])
-Delta = namedtuple("Delta", ["price", "delta"])
-
-
-# Configure basic logging
-logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s [BOOK] [%(levelname)s] %(message)s"
-)
-
+from common.models.level import Level
+from common.models.delta import Delta
 
 class Orderbook:
     """
@@ -19,7 +9,6 @@ class Orderbook:
     """
 
     def __init__(self, bids: List[Level], asks: List[Level]) -> None:
-        logging.info("book created")
         self.bids = bids
         self.asks = asks
 
@@ -71,10 +60,6 @@ class Orderbook:
                 self.bids = snapshot
             case "asks":
                 self.asks = snapshot
-            case _:
-                logging.error(
-                    f"Encountered undefined `side = {side}` while applying orderbook refresh"
-                )
 
         # Sort the book
         self.sort()
@@ -101,8 +86,6 @@ class Orderbook:
                 if no_levels:
                     self.refresh(side="asks", snapshot=no_levels)
 
-                logging.info("book snapshot rx")
-
             case "orderbook_delta":
                 # Create the Delta object
                 delta = Delta(recv["msg"]["price"], recv["msg"]["delta"])
@@ -112,8 +95,3 @@ class Orderbook:
                     self.update(self.bids, delta=delta)
                 elif recv["msg"]["side"] == "no":
                     self.update(self.asks, delta=delta)
-
-                logging.info("book delta rx")
-
-            case _:
-                logging.warning("unrecognized message rx")
