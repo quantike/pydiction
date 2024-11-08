@@ -6,7 +6,6 @@ from kalshi.ws.factory import websocket_factory
 
 
 class KalshiStream:
-
     _channels_ = ["orderbook_delta", "ticker", "trade"]
 
     def __init__(self, state: State, auth: Authenticator) -> None:
@@ -23,7 +22,6 @@ class KalshiStream:
         # Set up WebSocket Client
         await self.ws_client.connect()
         await self.ws_client.add_subscription(self._channels_)
-
 
     async def _stream_(self):
         pass

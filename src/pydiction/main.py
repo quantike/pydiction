@@ -19,7 +19,7 @@ from pydiction.auth import KalshiAPI
 load_dotenv()
 
 EMAIL = os.getenv("KALSHI_EMAIL")
-PASSWORD = os.getenv("KALSHI_PASSWORD")
+PASSWORD = os.getenv("KALSHI_PASS")
 API_KEY = os.getenv("KALSHI_ACCESS_KEY")
 BASE_URL = "trading-api"
 

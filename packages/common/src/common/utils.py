@@ -1,8 +1,9 @@
+from pathlib import Path
 import yaml
 from typing import Dict
 
 
-def load_from_yaml(filename: str) -> Dict:
+def load_from_yaml(filename: Path) -> Dict:
     """
     Loads content from a yaml file given a filename.
 
