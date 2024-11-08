@@ -11,8 +11,8 @@ common = { workspace = true }
 kalshi = { workspace = true }
 
 [tool.uv.workspace]
-members = ["packages/kalshi", "packages/common"]
-exclude = ["packages/maker", "packages/streams", "packages/pipeline"]
+members = ["packages/kalshi", "packages/common", "packages/streams"]
+exclude = ["packages/maker", "packages/pipeline"]
 
 [dependency-groups]
 dev = [
