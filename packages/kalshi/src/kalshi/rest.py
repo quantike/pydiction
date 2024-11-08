@@ -1,4 +1,4 @@
-from typing import Dict
+from typing import Any, Dict, List, Optional
 import requests
 
 from common.state import State
@@ -24,23 +24,19 @@ class KalshiRestClient:
         # Else, login failed
         return False
 
-    def get_events(self):
-        raise NotImplementedError
+    def _deep_fetch_(
+        self, path: str, key: str, params: Optional[Dict[str, Any]] = None
+    ) -> List[Dict[str, Any]]:
+        """
+        Helper function that performs a deep fetch via pagination of results.
 
-    def get_event(self, event_ticker: str):
-        method = "GET"
-        path = f"/trade-api/v2/events/{event_ticker}"
-
-        headers = self.auth.create_headers(method, path)
-
-        return requests.get(self.state.rest_base_url + path, headers=headers)
-
-    def get_market_trades(self, ticker: str, fetch_all: bool = False):
-        path = "/trade-api/v2/markets/trades"
-
-        params = {
-            "ticker": ticker,
-        }
+        Attributes:
+            path(str): The API endpoint path to fetch from.
+            key(str): The key in the JSON response containing the list of items to fetch.
+            params(dict): Optional dictionary of query parameters.
+        """
+        if params is None:
+            params = {}
 
         results = []
         next_cursor = None
@@ -54,17 +50,44 @@ class KalshiRestClient:
 
             data = response.json()
 
-            if "trades" in data:
-                results.extend(data["trades"])
+            if key in data:
+                results.extend(data[key])
             else:
-                print("No trades data found in the response")
+                print(f"No `{key}` found in response")
 
             next_cursor = data.get("cursor")
 
-            if not fetch_all or not next_cursor:
+            # If there's no next_cursor we break pagination
+            if not next_cursor:
                 break
 
         return results
+
+    def get_events(self):
+        raise NotImplementedError
+
+    def get_event(self, event_ticker: str):
+        method = "GET"
+        path = f"/trade-api/v2/events/{event_ticker}"
+
+        headers = self.auth.create_headers(method, path)
+
+        return requests.get(self.state.rest_base_url + path, headers=headers)
+
+    def get_market_trades(self, ticker: str, fetch_all: bool = False):
+        # Wrapper around _deep_fetch_ for getting market trades
+        path = "/trade-api/v2/markets/trades"
+        params = {"ticker": ticker}
+
+        if fetch_all:
+            return self._deep_fetch_(path, params=params, key="trades")
+
+        # Single fetch if fetch_all is False
+        response = requests.get(self.state.rest_base_url + path, params=params)
+        response.raise_for_status()
+        data = response.json()
+
+        return data.get("trades", [])
 
     def get_exchange_schedule(self):
         """
@@ -106,9 +129,33 @@ class KalshiRestClient:
         Requests the portfolio balance for a logged-in user. Returns the balance in dollar cents,
         and the available payout in dollar cents.
         """
+        if not self.is_connected:
+            raise Exception("User not logged in")
+
         method = "GET"
         path = "/trade-api/v2/portfolio/balance"
 
         headers = self.auth.create_headers(method, path)
 
         return requests.get(self.state.rest_base_url + path, headers=headers)
+
+    def get_portfolio_fills(self, ticker: str, fetch_all: bool = False):
+        """ """
+        if not self.is_connected:
+            raise Exception("User not logged in")
+
+        path = "/trade-api/v2/portfolio/fills"
+        params = {"ticker": ticker}
+
+        if fetch_all:
+            return self._deep_fetch_(path, params=params, key="fills")
+
+        # Single request if fetch_all is False
+        headers = self.auth.create_headers("GET", path)
+        response = requests.get(
+            self.state.rest_base_url + path, headers=headers, params=params
+        )
+        response.raise_for_status()
+        data = response.json()
+
+        return data.get("fills", [])
