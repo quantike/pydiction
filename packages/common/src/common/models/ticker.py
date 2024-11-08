@@ -18,6 +18,7 @@ class Ticker:
         dollar_volume(int): Number of dollars traded on the market so far.
         dollar_oi(int): Number of dollars positioned in the market current.
     """
+
     ts: datetime
     price: int
     bid: int
@@ -36,5 +37,5 @@ class Ticker:
             "volume": self.volume,
             "oi": self.oi,
             "dollar_volume": self.dollar_volume,
-            "dollar_oi": self.dollar_oi
+            "dollar_oi": self.dollar_oi,
         }

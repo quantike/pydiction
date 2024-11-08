@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Any, Dict
 
+
 @dataclass
 class Trade:
     """
@@ -13,6 +14,7 @@ class Trade:
         price(int): Price for the trade. Between 1 and 99 (inclusive).
         amount(int): The number of contracts traded.
     """
+
     ts: datetime
     side: str
     price: int
@@ -23,5 +25,5 @@ class Trade:
             "ts": self.ts,
             "side": self.side,
             "price": self.price,
-            "amount": self.amount
+            "amount": self.amount,
         }
