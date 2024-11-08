@@ -1,5 +1,6 @@
 import asyncio
 import os
+from pathlib import Path
 from typing import Dict, List
 
 from common.utils import load_from_yaml
@@ -9,8 +10,10 @@ REFRESH_PERIOD = 10.0  # Refresh period for config refresh in Pydiction
 
 
 class State:
-    CONFIGURATION_PATH = "config/common/config.yaml"
-    TICKERS_PATH = "config/pipeline/tickers.yaml"
+    # Define base directory as the location of this file
+    BASE_DIR = Path(__file__).resolve().parent.parent.parent.parent.parent
+    CONFIGURATION_PATH = BASE_DIR / "config/common/config.yaml"
+    TICKERS_PATH = BASE_DIR / "config/pipeline/tickers.yaml"
 
     def __init__(self) -> None:
         self.email = os.getenv("KALSHI_EMAIL")
