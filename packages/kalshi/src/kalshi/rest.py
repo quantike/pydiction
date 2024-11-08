@@ -36,17 +36,36 @@ class KalshiRestClient:
 
         return requests.get(self.state.rest_base_url + path, headers=headers)
 
-    def get_market_trades(self, ticker: str):
-        method = "GET"
+    def get_market_trades(self, ticker: str, fetch_all: bool = False):
         path = "/trade-api/v2/markets/trades"
 
-        additional_headers = {
+        params = {
             "ticker": ticker,
         }
 
-        headers = self.auth.create_headers(method, path) | additional_headers
+        results = []
+        next_cursor = None
 
-        return requests.get(self.state.rest_base_url + path, headers=headers)
+        while True:
+            if next_cursor:
+                params["cursor"] = next_cursor
+
+            response = requests.get(self.state.rest_base_url + path, params=params)
+            response.raise_for_status()
+
+            data = response.json()
+
+            if "trades" in data:
+                results.extend(data["trades"])
+            else: 
+                print("No trades data found in the response")
+
+            next_cursor = data.get("cursor")
+
+            if not fetch_all or not next_cursor:
+                break
+
+        return results
 
     def get_exchange_schedule(self):
         """

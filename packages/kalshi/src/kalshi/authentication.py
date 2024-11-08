@@ -108,17 +108,14 @@ class Authenticator:
 
         :param base_url (str): The base URL for the REST endpoint. Dependent on `exchange` from `State`.
         """
-        method = "POST"
         path = "/trade-api/v2/login"
 
-        additional_headers = {
+        data = {
             "email": self.state.email,
             "password": self.state.password,
         }
 
-        headers = self.create_headers(method, path) | additional_headers
-
-        response = requests.post(base_url + path, headers=headers)
+        response = requests.post(base_url + path, json=data)
 
         return response.json()
 
