@@ -1,6 +1,7 @@
 from typing import Tuple
 from common.models.orderbook import Orderbook
 
+
 class BookFeatures:
     def __init__(self, orderbook: Orderbook) -> None:
         self.orderbook = orderbook

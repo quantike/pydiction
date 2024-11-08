@@ -3,6 +3,7 @@ from typing import Dict, List
 from common.models.level import Level
 from common.models.delta import Delta
 
+
 class Orderbook:
     """
     Stores the Orderbook which is a collection of the current `bids` and `asks`.

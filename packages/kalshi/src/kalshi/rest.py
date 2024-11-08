@@ -6,7 +6,6 @@ from kalshi.authentication import Authenticator
 
 
 class KalshiRestClient:
-
     def __init__(self, state: State, auth: Authenticator) -> None:
         self.state = state
         self.auth = auth
@@ -57,7 +56,7 @@ class KalshiRestClient:
 
             if "trades" in data:
                 results.extend(data["trades"])
-            else: 
+            else:
                 print("No trades data found in the response")
 
             next_cursor = data.get("cursor")

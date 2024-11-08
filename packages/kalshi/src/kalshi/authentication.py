@@ -133,4 +133,3 @@ class Authenticator:
         headers = self.create_headers(method, path)
 
         return headers
-
