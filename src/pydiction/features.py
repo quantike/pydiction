@@ -1,5 +1,5 @@
 from typing import Tuple
-from pydiction.book import Orderbook
+from common.models.orderbook import Orderbook
 
 
 class BookFeatures:

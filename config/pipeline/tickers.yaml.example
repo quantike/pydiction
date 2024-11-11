@@ -1,0 +1,8 @@
+# Tickers to track from Kalshi. Can be grabbed from the web UI under "Rules summary" ->
+# "Timeline and settlement details" -> "Market"
+market_tickers:
+  # - RTVENOM3-45
+  # - RTVENOM3-60
+  # - RTVENOM3-75
+  # - RTVENOM3-90
+  - BTCMAXY-24DEC31-75000

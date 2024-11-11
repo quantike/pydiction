@@ -1,0 +1,27 @@
+# Options: ["LX", "KX"]
+# 
+# - "LX": Is the legacy LedgerX clearing house for Kalshi
+# - "KX": Is Kalshi's new clearing house, KLEAR
+exchange: ""
+
+# Options: ["https://api.elections.kalshi.com", "https://trading-api.kalshi.com"]
+#
+# - "https://api.elections.kalshi.com":
+# - "https://trading-api.kalshi.com":
+rest_base_url: ""
+
+# Options: ["wss://api.elections.kalshi.com/trade-api/ws/v2", "wss://trading-api.kalshi.com/trade-api/ws/v2"]
+#
+# - "wss://api.elections.kalshi.com/trade-api/ws/v2":
+# - "wss://trading-api.kalshi.com/trade-api/ws/v2":
+ws_uri: ""
+
+# Options: Any valid float or integer. Recommended to keep above 1s.
+#
+# Longer times give program a larger delay before a reconnection attempt.
+reconnection_interval: 1.0
+
+# Options: Any valid float or integer. Recommended to keep above 1s.
+#
+# Longer times give websocket more time to respond to messages. Shorter times could lead to more reconnects.
+confirmation_timeout: 1.0
