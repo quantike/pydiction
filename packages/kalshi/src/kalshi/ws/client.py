@@ -14,9 +14,7 @@ from common.state import State
 
 
 class KalshiWsClient:
-    def __init__(
-        self, state: State
-    ) -> None:
+    def __init__(self, state: State) -> None:
         self.state = state
         self.auth = Authenticator(self.state)
         self.subscriptions: Dict[int, Subscription] = {}
@@ -28,8 +26,8 @@ class KalshiWsClient:
 
     async def connect(self):
         headers = self.auth.get_auth_headers_ws()
-        self.websocket: websockets.WebSocketClientProtocol = (
-            await websocket_factory(self.state.ws_uri, extra_headers=headers)
+        self.websocket: websockets.WebSocketClientProtocol = await websocket_factory(
+            self.state.ws_uri, extra_headers=headers
         )
 
         # Start listening for messages from the server
@@ -92,7 +90,9 @@ class KalshiWsClient:
         """Wait for confirmation within a pre-defined window, else reconnect."""
         await asyncio.sleep(self.state.confirmation_timeout)
         if subscription_id in self.subscriptions:
-            logger.error(f"Subscription {subscription_id} not confirmed, reconnecting...")
+            logger.error(
+                f"Subscription {subscription_id} not confirmed, reconnecting..."
+            )
             await self._reconnect_()
 
     async def update_subscription(

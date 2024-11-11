@@ -22,19 +22,13 @@ class Trade:
     count: int
 
     @classmethod
-    def empty(cls) -> 'Trade':
+    def empty(cls) -> "Trade":
         """
         Creates an empty `Trade` instance with default parameters.
         """
-        return Trade(
-            ts=0,
-            side="fake",
-            yes_price=0,
-            no_price=0,
-            count=0
-        )
+        return Trade(ts=0, side="fake", yes_price=0, no_price=0, count=0)
 
-    def to_dict(self) -> Dict[str, int|str]:
+    def to_dict(self) -> Dict[str, int | str]:
         return {
             "ts": self.ts,
             "side": self.side,

@@ -3,7 +3,6 @@ from common.models.tick import Tick
 
 
 class KalshiTickHandler:
-
     def __init__(self, tick: Tick) -> None:
         self.tick = tick
 
@@ -23,7 +22,7 @@ class KalshiTickHandler:
                 volume=data.get("volume", self.tick.volume),
                 oi=data.get("open_interest", self.tick.oi),
                 dollar_volume=data.get("dollar_volume", self.tick.dollar_volume),
-                dollar_oi=data.get("dollar_open_interest", self.tick.dollar_oi)
+                dollar_oi=data.get("dollar_open_interest", self.tick.dollar_oi),
             )
 
         except Exception as e:

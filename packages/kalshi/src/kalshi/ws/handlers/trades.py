@@ -5,7 +5,6 @@ from common.models.trade import Trade
 
 
 class KalshiTradeHandler:
-
     def __init__(self, trade: Trade) -> None:
         self.trade = trade
 
@@ -22,11 +21,13 @@ class KalshiTradeHandler:
                 side=data.get("taker_side", self.trade.side),
                 yes_price=data.get("yes_price", self.trade.yes_price),
                 no_price=data.get("no_price", self.trade.no_price),
-                count=data.get("count", self.trade.count)
+                count=data.get("count", self.trade.count),
             )
 
             # Log the successful processing of the tick
-            logger.info(f"Trade processed {self.trade.side}: {self.trade.yes_price if self.trade.side == "yes" else self.trade.no_price} for {self.trade.count} @ {self.trade.ts}")
+            logger.info(
+                f"Trade processed {self.trade.side}: {self.trade.yes_price if self.trade.side == "yes" else self.trade.no_price} for {self.trade.count} @ {self.trade.ts}"
+            )
 
         except Exception as e:
             raise Exception(f"Tick process error: {e}")

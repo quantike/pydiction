@@ -28,22 +28,25 @@ class Tick:
     dollar_oi: int
 
     @classmethod
-    def empty(cls) -> 'Tick':
+    def empty(cls) -> "Tick":
         """
         Creates an empty `Tick` instance with placeholder values.
         """
         return cls(
-            ts=0,
-            price=0,
-            bid=0,
-            ask=0,
-            volume=0,
-            oi=0,
-            dollar_volume=0,
-            dollar_oi=0
+            ts=0, price=0, bid=0, ask=0, volume=0, oi=0, dollar_volume=0, dollar_oi=0
         )
 
-    def update(self, ts: int, price: int, bid: int, ask: int, volume: int, oi: int, dollar_volume: int, dollar_oi: int) -> None:
+    def update(
+        self,
+        ts: int,
+        price: int,
+        bid: int,
+        ask: int,
+        volume: int,
+        oi: int,
+        dollar_volume: int,
+        dollar_oi: int,
+    ) -> None:
         """
         Updates the `Tick` dataclass in-place if there is a change. We may want to check if this is faster than just a full re-write of the data.
 
@@ -61,7 +64,7 @@ class Tick:
             self.ts = ts
         if self.price != price:
             self.price = price
-        if self.bid != bid: 
+        if self.bid != bid:
             self.bid = bid
         if self.ask != ask:
             self.ask = ask
