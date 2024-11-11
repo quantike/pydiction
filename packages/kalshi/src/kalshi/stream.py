@@ -2,17 +2,16 @@ from common.state import State
 from kalshi.authentication import Authenticator
 from kalshi.rest import KalshiRestClient
 from kalshi.ws.client import KalshiWsClient
-from kalshi.ws.factory import websocket_factory
 
 
 class KalshiStream:
     _channels_ = ["orderbook_delta", "ticker", "trade"]
 
-    def __init__(self, state: State, auth: Authenticator) -> None:
+    def __init__(self, state: State) -> None:
         self.state = state
-        self.auth = auth
-        self.rest_client = KalshiRestClient(self.state, self.auth)
-        self.ws_client = KalshiWsClient(self.state, self.auth, websocket_factory)
+        self.auth = Authenticator(self.state)
+        self.rest_client = KalshiRestClient(self.state)
+        self.ws_client = KalshiWsClient(self.state)
 
     async def _initialize_(self) -> None:
         # Check REST client

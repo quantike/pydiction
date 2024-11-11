@@ -6,9 +6,9 @@ from kalshi.authentication import Authenticator
 
 
 class KalshiRestClient:
-    def __init__(self, state: State, auth: Authenticator) -> None:
+    def __init__(self, state: State) -> None:
         self.state = state
-        self.auth = auth
+        self.auth = Authenticator(self.state)
         self.is_connected = self._connect_()
 
     def _connect_(self) -> bool:

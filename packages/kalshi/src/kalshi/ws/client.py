@@ -1,23 +1,24 @@
 import json
 import time
+from loguru import logger
 import websockets
 import asyncio
 
-from typing import Callable, Dict, List, Set
+from typing import Dict, List, Set
 
 from kalshi.ws.subscription import Subscription
 from kalshi.ws.handler import KalshiMessageHandler
+from kalshi.ws.factory import websocket_factory
 from kalshi.authentication import Authenticator
 from common.state import State
 
 
 class KalshiWsClient:
     def __init__(
-        self, state: State, auth: Authenticator, websocket_factory: Callable
+        self, state: State
     ) -> None:
         self.state = state
-        self.auth = auth
-        self.websocket_factory = websocket_factory
+        self.auth = Authenticator(self.state)
         self.subscriptions: Dict[int, Subscription] = {}
         self.pending_unsubscriptions: Set = set()
         self._id_counter = 0
@@ -28,7 +29,7 @@ class KalshiWsClient:
     async def connect(self):
         headers = self.auth.get_auth_headers_ws()
         self.websocket: websockets.WebSocketClientProtocol = (
-            await self.websocket_factory(self.state.ws_uri, extra_headers=headers)
+            await websocket_factory(self.state.ws_uri, extra_headers=headers)
         )
 
         # Start listening for messages from the server
@@ -37,16 +38,16 @@ class KalshiWsClient:
     async def _reconnect_(self):
         """Close the connection and attempt to re-connect periodically."""
         await self.websocket.close()
-        print("Reconnecting...")
+        logger.info("attempting reconnect...")
 
         while True:
             try:
                 await self.connect()
-                print("Reconnection successful")
+                logger.success("Reconnection successful")
                 await self.resubscribe_all()
                 break
             except Exception as e:
-                print(
+                logger.error(
                     f"Reconnect failed: {e}, retrying in {self.state.reconnection_interval}s..."
                 )
                 await asyncio.sleep(self.state.reconnection_interval)
@@ -91,7 +92,7 @@ class KalshiWsClient:
         """Wait for confirmation within a pre-defined window, else reconnect."""
         await asyncio.sleep(self.state.confirmation_timeout)
         if subscription_id in self.subscriptions:
-            print(f"Subscription {subscription_id} not confirmed, reconnecting...")
+            logger.error(f"Subscription {subscription_id} not confirmed, reconnecting...")
             await self._reconnect_()
 
     async def update_subscription(
@@ -201,7 +202,7 @@ class KalshiWsClient:
             and subscription_id not in self.pending_unsubscriptions
         ):
             subscription = self.subscriptions[subscription_id]
-            print(
+            logger.error(
                 f"Forced unsubscription detected for SID: {subscription_id}, attempting re-subscribe..."
             )
             await self.add_subscription(channels=subscription.channels)
@@ -241,7 +242,7 @@ class KalshiWsClient:
                 pong = await self.websocket.ping()
                 await pong
             except Exception:
-                print("Connection health deteriorated, reconnecting...")
+                logger.error("Connection health deteriorated, reconnecting...")
                 await self._reconnect_()
 
     async def listen(self):
@@ -250,7 +251,7 @@ class KalshiWsClient:
             async for message in self.websocket:
                 await self.handle_message(json.loads(message))
         except websockets.ConnectionClosed:
-            print("Connection closed during listen, reconnecting...")
+            logger.error("Connection closed during listen, reconnecting...")
             await self._reconnect_()
 
     async def handle_message(self, message: Dict):
@@ -260,7 +261,7 @@ class KalshiWsClient:
             case "subscribed":
                 subscription_id = message.get("id")
                 if subscription_id is not None:
-                    print(
+                    logger.info(
                         f"subscription created to channel: {message["msg"]["channel"]}"
                     )
             # Handles un-subcriptions
@@ -272,13 +273,13 @@ class KalshiWsClient:
             case "ok":
                 subscription_id = message.get("id")
                 if subscription_id is not None:
-                    print(
+                    logger.info(
                         f"subscription(s) updated with ticker(s): {message["market_tickers"]}"
                     )
             # Handles errors by logging the code and message
             case "error":
                 subscription_id = message.get("id")
                 if subscription_id is not None:
-                    print(f"error received: {message["msg"]}")
+                    logger.error(f"error received: {message["msg"]}")
             case _:
                 self.handler.handle_message(message)

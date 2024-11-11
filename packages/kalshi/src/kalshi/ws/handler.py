@@ -1,4 +1,10 @@
+from common.models.trade import Trade
+from loguru import logger
 from typing import Dict
+
+from common.models.tick import Tick
+from kalshi.ws.handlers.ticks import KalshiTickHandler
+from kalshi.ws.handlers.trades import KalshiTradeHandler
 
 
 class KalshiMessageHandler:
@@ -11,6 +17,8 @@ class KalshiMessageHandler:
             "fill": self._handle_fill_,
             "market_lifecycle": self._handle_market_lifecycle_,
         }
+        self.tick = KalshiTickHandler(tick=Tick.empty())
+        self.trade = KalshiTradeHandler(trade=Trade.empty())
 
     def handle_message(self, message: Dict) -> None:
         message_type: str = message.get("type", "")
@@ -18,29 +26,29 @@ class KalshiMessageHandler:
         handler(message)
 
     def _handle_snapshot_(self, message: Dict) -> None:
-        print(f"snapshot: {message}")
+        logger.debug(f"snapshot: {message}")
         pass
 
     def _handle_delta_(self, message: Dict) -> None:
-        print(f"delta: {message}")
+        logger.debug(f"delta: {message}")
         pass
 
     def _handle_ticker_(self, message: Dict) -> None:
-        print(f"ticker: {message}")
-        pass
+        logger.debug(f"ticker: {message}")
+        self.tick.process(message["msg"])
 
     def _handle_trade_(self, message: Dict) -> None:
-        print(f"trade: {message}")
-        pass
+        logger.debug(f"trade: {message}")
+        self.trade.process(message["msg"])
 
     def _handle_fill_(self, message: Dict) -> None:
-        print(f"fill: {message}")
+        logger.debug(f"fill: {message}")
         pass
 
     def _handle_market_lifecycle_(self, message: Dict) -> None:
-        print(f"lifecycle: {message}")
+        logger.debug(f"lifecycle: {message}")
         pass
 
     def _handle_unexpected_(self, message: Dict) -> None:
-        print(f"unexpected: {message}")
+        logger.error(f"unexpected: {message}")
         pass

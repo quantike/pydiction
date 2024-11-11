@@ -1,4 +1,6 @@
+from loguru import logger
 from typing import Any, Dict
+
 from common.models.tick import Tick
 
 
@@ -25,6 +27,9 @@ class KalshiTickHandler:
                 dollar_volume=data.get("dollar_volume", self.tick.dollar_volume),
                 dollar_oi=data.get("dollar_open_interest", self.tick.dollar_oi)
             )
+
+            # Log the successful processing of the tick
+            logger.info(f"Tick processed at {self.tick.ts} with price {self.tick.price}, bid {self.tick.bid}, ask {self.tick.ask}, and spread {self.tick.ask - self.tick.bid}.")
 
         except Exception as e:
             raise Exception(f"Tick process error: {e}")

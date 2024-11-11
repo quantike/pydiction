@@ -3,10 +3,12 @@ import os
 from pathlib import Path
 from typing import Dict, List
 
+from loguru import logger
+
 from common.utils import load_from_yaml
 
 
-REFRESH_PERIOD = 10.0  # Refresh period for config refresh in Pydiction
+REFRESH_PERIOD = 900  # Refresh period for config refresh in Pydiction
 
 
 class State:
@@ -45,9 +47,9 @@ class State:
         if not self.TICKERS_PATH:
             raise ValueError("Please check that you have a valid `tickers.yaml` file")
 
-        self._initialize()
+        self._initialize_()
 
-    def _load(self, config: Dict, tickers: Dict, refresh: bool = False) -> None:
+    def _load_(self, config: Dict, tickers: Dict, refresh: bool = False) -> None:
         if not refresh:
             self.exchange = config["exchange"]
             self.rest_base_url = config["rest_base_url"]
@@ -58,13 +60,13 @@ class State:
 
         # eventually, load strategy related params below?
 
-    def _initialize(self) -> None:
+    def _initialize_(self) -> None:
         """
         Loads the initial configuration and tickers from their respective yaml files.
         """
         config = load_from_yaml(self.CONFIGURATION_PATH)
         tickers = load_from_yaml(self.TICKERS_PATH)
-        self._load(config, tickers)
+        self._load_(config, tickers)
 
     async def refresh(self) -> None:
         """
@@ -78,4 +80,5 @@ class State:
             tickers = load_from_yaml(self.TICKERS_PATH)
 
             # call load again
-            self._load(config, tickers)
+            self._load_(config, tickers)
+            logger.info("refreshed config and tickers")
