@@ -29,6 +29,7 @@ class KalshiMessageHandler:
         handler(message)
 
     def _handle_book_update_(self, message: Dict) -> None:
+        logger.debug(f"book: {message}")
         update_type: str = message.get("type", "")
         self.orderbook.process(update_type, message["msg"])
 
