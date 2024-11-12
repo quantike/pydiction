@@ -13,7 +13,7 @@ async def main():
         state = State()
         websocket = KalshiWsClient(state)
         await websocket.connect()
-        await websocket.add_subscription(["ticker", "trade"])
+        await websocket.add_subscription(["ticker", "trade", "orderbook_delta"])
 
         await asyncio.gather(state.refresh(), websocket.monitor_connection_health())
 
