@@ -4,10 +4,12 @@ from loguru import logger
 
 from common.state import State
 from kalshi.ws.client import KalshiWsClient
+from common.clog import CentralizedLogger
 
 
 async def main():
     state = None
+    CentralizedLogger()
 
     try:
         state = State()
