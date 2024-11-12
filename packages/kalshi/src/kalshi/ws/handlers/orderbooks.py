@@ -25,10 +25,7 @@ class KalshiOrderbookHandler:
                     asks = [Level(level[0], level[1]) for level in data["no"]]
 
                     # Build whole new book in the event that the current orderbook is empty
-                    self.orderbook = Orderbook(
-                        bids=bids,
-                        asks=asks
-                    )
+                    self.orderbook = Orderbook(bids=bids, asks=asks)
 
                     # Log the successful processing of the snapshot
                     logger.info(

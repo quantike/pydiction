@@ -14,17 +14,14 @@ class Orderbook:
         self.asks = asks
 
     @classmethod
-    def empty(cls) -> 'Orderbook':
+    def empty(cls) -> "Orderbook":
         """
         Creates an empty Orderbook instance.
 
         Returns:
             Orderbook: An empty Orderbook instance.
         """
-        return Orderbook(
-            bids=[Level(0, 0)],
-            asks=[Level(0, 0)]
-        )
+        return Orderbook(bids=[Level(0, 0)], asks=[Level(0, 0)])
 
     @property
     def is_empty(self) -> bool:
@@ -52,7 +49,7 @@ class Orderbook:
         """
         Updated the book with any new delta. Intended use is with orderbook delta updates.
 
-        Attributes: 
+        Attributes:
             book(List[Level]): The bid or ask side of the book, represented as a list of levels (price, quantity).
             delta(Delta): The delta message used to update a specific level in the book, represented as (price, delta).
         """
@@ -101,10 +98,7 @@ class Orderbook:
         """
         Exports the current book data to a dictionary.
         """
-        return {
-            "bids": self.bids,
-            "asks": self.asks
-        }
+        return {"bids": self.bids, "asks": self.asks}
 
     def calculate_vwap(self):
         raise NotImplementedError
@@ -119,7 +113,7 @@ class Orderbook:
     def bba(self) -> Tuple[Optional[Level], Optional[Level]]:
         """
         Returns the best bid and ask levels, as a property.
-        
+
         Returns:
             Tuple[Optional[Level], Optional[Level]]: A tuple of the best bid and ask.
         """
@@ -182,8 +176,12 @@ class Orderbook:
 
         # In the event we have both a best bid and best ask
         # calculate the mid price
-        if best_bid and best_ask: 
-            return best_ask.price * best_bid.quantity / (best_ask.quantity + best_bid.quantity) + best_bid.price * best_ask.quantity / (best_ask.quantity + best_bid.quantity)
+        if best_bid and best_ask:
+            return best_ask.price * best_bid.quantity / (
+                best_ask.quantity + best_bid.quantity
+            ) + best_bid.price * best_ask.quantity / (
+                best_ask.quantity + best_bid.quantity
+            )
 
         # In the event we do not have one of them return None
         return None
