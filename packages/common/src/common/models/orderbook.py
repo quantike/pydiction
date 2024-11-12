@@ -12,6 +12,7 @@ class Orderbook:
     def __init__(self, bids: List[Level], asks: List[Level]) -> None:
         self.bids = bids
         self.asks = asks
+        self.sort()
 
     @classmethod
     def empty(cls) -> "Orderbook":
