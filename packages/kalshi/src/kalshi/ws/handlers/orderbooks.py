@@ -24,7 +24,7 @@ class KalshiOrderbookHandler:
                     # Our orderbook takes the "YES" perspective on the market. This means we interpret the "NO"
                     # best bid as the best ask for "YES". This is done by taking 100 - yes_bid_price.
                     bids = [Level(level[0], level[1]) for level in data["yes"]]
-                    asks = [Level(100-level[0], level[1]) for level in data["no"]]
+                    asks = [Level(100 - level[0], level[1]) for level in data["no"]]
 
                     # Build whole new book in the event that the current orderbook is empty
                     self.orderbook = Orderbook(bids=bids, asks=asks)
@@ -44,7 +44,7 @@ class KalshiOrderbookHandler:
 
                     elif data["side"] == "no":
                         # Take the "YES" perspective and create the synthetic "YES" ask of 100-no_price
-                        delta = Delta(price=100-data["price"], delta=data["delta"])
+                        delta = Delta(price=100 - data["price"], delta=data["delta"])
                         self.orderbook.update(self.orderbook.asks, delta)
                         logger.info(
                             f"Orderbook NO update: {self.orderbook.bba} mid {self.orderbook.mid_price} micro {self.orderbook.micro_price} spread {self.orderbook.spread}"
