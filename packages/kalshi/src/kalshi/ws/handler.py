@@ -4,6 +4,8 @@ from loguru import logger
 from typing import Dict
 
 from common.models.tick import Tick
+from kalshi.models.lifecycle import Lifecycle
+from kalshi.ws.handlers.lifecycles import KalshiLifecycleHandler
 from kalshi.ws.handlers.orderbooks import KalshiOrderbookHandler
 from kalshi.ws.handlers.ticks import KalshiTickHandler
 from kalshi.ws.handlers.trades import KalshiTradeHandler
@@ -22,6 +24,7 @@ class KalshiMessageHandler:
         self.tick = KalshiTickHandler(tick=Tick.empty())
         self.trade = KalshiTradeHandler(trade=Trade.empty())
         self.orderbook = KalshiOrderbookHandler(orderbook=Orderbook.empty())
+        self.lifecycle = KalshiLifecycleHandler(lifecycle=Lifecycle.empty())
 
     def handle_message(self, message: Dict) -> None:
         message_type: str = message.get("type", "")
@@ -47,7 +50,7 @@ class KalshiMessageHandler:
 
     def _handle_market_lifecycle_(self, message: Dict) -> None:
         logger.debug(f"lifecycle: {message}")
-        pass
+        self.lifecycle.process(message["msg"])
 
     def _handle_unexpected_(self, message: Dict) -> None:
         logger.error(f"unexpected: {message}")

@@ -10,10 +10,10 @@ class CentralizedLogger:
         logger.remove()  # Remove any existing handlers
 
         if log_to_console:
-            logger.add(sys.stdout, level="INFO")  # Console logging at INFO level
+            logger.add(sys.stdout, level="DEBUG")  # Console logging at INFO level
         if log_file is not None:
             logger.add(
-                log_file, rotation="10 MB", retention="10 days", level="INFO"
+                log_file, rotation="10 MB", retention="10 days", level="DEBUG"
             )  # File logging with rotation
 
     async def shutdown(self):
