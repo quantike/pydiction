@@ -22,7 +22,7 @@ class Lifecycle:
     determination_ts: Optional[int] = None
     settled_ts: Optional[int] = None
     result: Optional[str] = None
-    
+
     @classmethod
     def empty(cls) -> "Lifecycle":
         """
@@ -30,7 +30,9 @@ class Lifecycle:
         """
         return cls(
             # We consider empty markets deactivated for trading logic
-            is_deactivated=True, open_ts=0, close_ts=0
+            is_deactivated=True,
+            open_ts=0,
+            close_ts=0,
         )
 
     def update(
@@ -40,7 +42,7 @@ class Lifecycle:
         close_ts: int,
         determination_ts: Optional[bool] = None,
         settled_ts: Optional[bool] = None,
-        result: Optional[str] = None
+        result: Optional[str] = None,
     ) -> None:
         """
         Updates the `Lifecycle` dataclass in-place if there is a change. We may want to check if this is faster than just a full re-write of the data.
@@ -76,5 +78,5 @@ class Lifecycle:
             "close_ts": self.close_ts,
             "determination_ts": self.determination_ts,
             "settled_ts": self.settled_ts,
-            "result": self.result
+            "result": self.result,
         }
