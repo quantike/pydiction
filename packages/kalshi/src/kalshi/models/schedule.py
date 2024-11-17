@@ -34,9 +34,13 @@ class KalshiSchedule:
     timezone: str = "UTC"
 
     @staticmethod
-    def from_api(rest_client: KalshiRestClient, timezone: str = "UTC", override_hours: Optional[Dict[str, Tuple[time, time]]] = None):
+    def from_api(
+        rest_client: KalshiRestClient,
+        timezone: str = "UTC",
+        override_hours: Optional[Dict[str, Tuple[time, time]]] = None,
+    ):
         """
-        Creates a `KalshiSchedule` from an API fetch. 
+        Creates a `KalshiSchedule` from an API fetch.
 
         Attributes:
             rest_client (KalshiRestClient): An instance of the the KalshiRestClient. Used to fetch the current schedule and maintenance windows.
@@ -48,7 +52,7 @@ class KalshiSchedule:
         """
         # Fetch the schedule from the API
         schedule = rest_client.get_exchange_schedule().json()
-        
+
         # Parse maintenance windows
         maintenance_windows = [
             (
@@ -61,7 +65,7 @@ class KalshiSchedule:
         # If override hours are provided, use them
         if override_hours:
             trading_hours = override_hours
-        else: 
+        else:
             trading_hours = {
                 day.lower(): (
                     datetime.strptime(hours["open_time"], "%H%M").time(),
@@ -73,7 +77,7 @@ class KalshiSchedule:
         return KalshiSchedule(
             trading_hours=trading_hours,
             maintenance_windows=maintenance_windows,
-            timezone=timezone
+            timezone=timezone,
         )
 
     @property
@@ -100,7 +104,7 @@ class KalshiSchedule:
             # Normal case where trading hours start and end on the same day
             return open_time <= local_time <= close_time
 
-        else: 
+        else:
             # Trading hours that span over midnight
             return local_time >= open_time or local_time <= close_time
 
@@ -141,7 +145,9 @@ class KalshiSchedule:
         Raises:
             KeyError: If the specified weekday does not exist in trading_hours.
         """
-        weekday = weekday or datetime.now(tz=ZoneInfo(self.timezone)).strftime("%A").lower()
+        weekday = (
+            weekday or datetime.now(tz=ZoneInfo(self.timezone)).strftime("%A").lower()
+        )
 
         if weekday not in self.trading_hours:
             raise KeyError(f"Trading hours for {weekday} are not defined")
