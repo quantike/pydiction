@@ -23,7 +23,9 @@ class KalshiOrderbookHandler:
 
             if seq is None:
                 logger.error(f"Failed to find sequence in orderbook update: {data}")
-                raise ValueError("Sequence number is missing in the orderbook data message")
+                raise ValueError(
+                    "Sequence number is missing in the orderbook data message"
+                )
 
             match update_type:
                 case "orderbook_snapshot":

@@ -65,7 +65,9 @@ class Orderbook:
             ValueError: If the given sequence number is less than or equal to the current orderbook sequence.
         """
         if seq <= self.seq:
-            raise ValueError(f"Sequence number {seq} is not greater than the current sequence number {self.seq}")
+            raise ValueError(
+                f"Sequence number {seq} is not greater than the current sequence number {self.seq}"
+            )
 
         for i, level in enumerate(book):
             # If there is a matching price, update the quantity with the delta

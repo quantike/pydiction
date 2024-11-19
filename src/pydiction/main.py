@@ -28,7 +28,11 @@ async def main():
             ["ticker", "trade", "orderbook_delta", "market_lifecycle"]
         )
 
-        await asyncio.gather(state.refresh(), websocket.monitor_connection_health(), kalshi_status_checker.run())
+        await asyncio.gather(
+            state.refresh(),
+            websocket.monitor_connection_health(),
+            kalshi_status_checker.run(),
+        )
 
     except (KeyboardInterrupt, asyncio.CancelledError):
         logger.critical("pydiction manually cancelled by user")
