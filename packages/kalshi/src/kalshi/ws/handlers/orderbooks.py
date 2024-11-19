@@ -35,6 +35,9 @@ class KalshiOrderbookHandler:
                     "Sequence number is missing in the orderbook data message"
                 )
 
+            # Overwrite the data
+            data = data["msg"]
+
             match update_type:
                 case "orderbook_snapshot":
                     # Our orderbook takes the "YES" perspective on the market. This means we interpret the "NO"
