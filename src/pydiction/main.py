@@ -11,6 +11,7 @@ from common.clog import CentralizedLogger
 
 async def main():
     state = None
+    kalshi_status_checker: KalshiStatus | None = None
     CentralizedLogger()
 
     try:
@@ -37,6 +38,9 @@ async def main():
         raise
 
     finally:
+        # TODO: Documenting that we have an unbound error for the processes that we are initializing within the try statement.
+        # Right now, they shouldn't be constructed outside of the try statement, but we may want to do this. We need to be able
+        # to call the `.shutdown()` function for all of these processes in order to close the program successfully.
         logger.info("pydiction successfully shutdown")
 
 
