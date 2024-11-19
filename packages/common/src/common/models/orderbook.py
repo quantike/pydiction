@@ -7,11 +7,17 @@ from common.models.delta import Delta
 class Orderbook:
     """
     Stores the Orderbook which is a collection of the current `bids` and `asks`.
+
+    Attributes:
+        bids (List[Level]): The bid side of the orderbook, represented as a list of (price, quantity) tuples.
+        asks (List[Level]): The ask side of the orderbook, represented as a list of (price, quantity) tuples.
+        seq (int): The sequence number of the orderbook. Defaults to zero.
     """
 
-    def __init__(self, bids: List[Level], asks: List[Level]) -> None:
+    def __init__(self, bids: List[Level], asks: List[Level], seq: int = 0) -> None:
         self.bids = bids
         self.asks = asks
+        self.seq = seq
         self.sort()
 
     @classmethod
@@ -22,7 +28,7 @@ class Orderbook:
         Returns:
             Orderbook: An empty Orderbook instance.
         """
-        return Orderbook(bids=[Level(0, 0)], asks=[Level(0, 0)])
+        return Orderbook(bids=[Level(0, 0)], asks=[Level(0, 0)], seq=0)
 
     @property
     def is_empty(self) -> bool:
@@ -46,14 +52,23 @@ class Orderbook:
         )  # bids are typically sorted in reverse
         self.asks.sort(key=lambda level: level.price)
 
-    def update(self, book: List[Level], delta: Delta) -> None:
+    def update(self, book: List[Level], delta: Delta, seq: int) -> None:
         """
         Updated the book with any new delta. Intended use is with orderbook delta updates.
 
         Attributes:
             book(List[Level]): The bid or ask side of the book, represented as a list of levels (price, quantity).
             delta(Delta): The delta message used to update a specific level in the book, represented as (price, delta).
+            seq(int): The sequence number of the update.
+
+        Raises:
+            ValueError: If the given sequence number is less than or equal to the current orderbook sequence.
         """
+        if seq <= self.seq:
+            raise ValueError(
+                f"Sequence number {seq} is not greater than the current sequence number {self.seq}"
+            )
+
         for i, level in enumerate(book):
             # If there is a matching price, update the quantity with the delta
             if delta.price == level.price:
@@ -77,13 +92,17 @@ class Orderbook:
         # Sort the book
         self.sort()
 
-    def refresh(self, side: str, snapshot: List[Level]) -> None:
+        # Finally, update sequence
+        self.seq = seq
+
+    def refresh(self, side: str, snapshot: List[Level], seq: int) -> None:
         """
         Refreshes the book side by replacing the bids or asks with a snapshot. Intended use is with orderbook snaphot data.
 
         Attributes:
             side(str): String of either "bids" or "asks". Used to specify which side gets updated.
             snaphot(List[Level]): The list of price, quantity levels to be applied to the book side.
+            seq(int): The sequence number of the snapshot.
         """
         # Apply snapshot to correct book side
         match side:
@@ -95,11 +114,14 @@ class Orderbook:
         # Sort the book
         self.sort()
 
-    def to_dict(self) -> Dict[str, List[Level]]:
+        # Update the sequence number
+        self.seq = seq
+
+    def to_dict(self) -> Dict[str, int | List[Level]]:
         """
         Exports the current book data to a dictionary.
         """
-        return {"bids": self.bids, "asks": self.asks}
+        return {"seq": self.seq, "bids": self.bids, "asks": self.asks}
 
     def calculate_vwap(self):
         raise NotImplementedError

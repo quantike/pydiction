@@ -6,8 +6,9 @@ from kalshi.rest import KalshiRestClient
 
 
 class KalshiStatus:
-
-    def __init__(self, rest_client: KalshiRestClient, polling_interval: int = 60) -> None:
+    def __init__(
+        self, rest_client: KalshiRestClient, polling_interval: int = 60
+    ) -> None:
         self._exchange_active: bool = False
         self._trading_active: bool = False
         self.rest_client = rest_client
@@ -15,7 +16,9 @@ class KalshiStatus:
         self._running = False
 
     @staticmethod
-    def from_api(rest_client: KalshiRestClient, polling_interval: int = 60) -> 'KalshiStatus':
+    def from_api(
+        rest_client: KalshiRestClient, polling_interval: int = 60
+    ) -> "KalshiStatus":
         instance = KalshiStatus(rest_client, polling_interval)
         try:
             status_response = rest_client.get_exchange_status().json()
@@ -48,7 +51,10 @@ class KalshiStatus:
         exchange_active = new_status.get("exchange_active", self._exchange_active)
         trading_active = new_status.get("trading_active", self._trading_active)
 
-        if (exchange_active, trading_active) != (self._exchange_active, self._trading_active):
+        if (exchange_active, trading_active) != (
+            self._exchange_active,
+            self._trading_active,
+        ):
             old_state = self.status
             self._exchange_active = exchange_active
             self._trading_active = trading_active
