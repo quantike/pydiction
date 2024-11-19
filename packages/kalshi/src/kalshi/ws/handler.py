@@ -33,8 +33,10 @@ class KalshiMessageHandler:
 
     def _handle_book_update_(self, message: Dict) -> None:
         logger.debug(f"book: {message}")
-        update_type: str = message.get("type", "")
-        self.orderbook.process(update_type, message["msg"])
+        
+        # We send the full message here because we need additional orderbook update data, 
+        # like the sequence.
+        self.orderbook.process(message)
 
     def _handle_ticker_(self, message: Dict) -> None:
         logger.debug(f"ticker: {message}")

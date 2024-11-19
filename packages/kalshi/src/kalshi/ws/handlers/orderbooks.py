@@ -10,15 +10,23 @@ class KalshiOrderbookHandler:
     def __init__(self, orderbook: Orderbook) -> None:
         self.orderbook = orderbook
 
-    def process(self, update_type: str, data: Dict[str, Any]) -> None:
+    def process(self, data: Dict[str, Any]) -> None:
         """
         Attempts to update the orderbook based on a data message. Parses 'orderbook_snapshot' via `refresh` and 'orderbook_delta' via `update.
         Will default to previous state if message fields cannot be parsed.
 
         Attributes:
-            data(dict): A dictionary that represents the data from a `trade` message.
+            data(dict): A dictionary that represents the data from a `orderbook_snapshot` or `orderbook_delta` message.
         """
         try:
+            # Verify we can pull the update type
+            update_type = data.get("type")
+
+            if update_type is None:
+                logger.error(f"Failed to get update type in data message: {data}")
+                raise ValueError("Failed to get update type in data message")
+
+            # Verify we can pull the seq data
             seq = data.get("seq")
 
             if seq is None:
@@ -40,7 +48,7 @@ class KalshiOrderbookHandler:
 
                     # Log the successful processing of the snapshot
                     logger.info(
-                        f"Orderbook created: {self.orderbook.bba} mid {self.orderbook.mid_price} micro {self.orderbook.micro_price} spread {self.orderbook.spread},"
+                        f"Orderbook created: {self.orderbook.bba} mid {self.orderbook.mid_price} micro {self.orderbook.micro_price:.2f} spread {self.orderbook.spread},"
                     )
 
                 case "orderbook_delta":
@@ -48,7 +56,7 @@ class KalshiOrderbookHandler:
                         delta = Delta(price=data["price"], delta=data["delta"])
                         self.orderbook.update(self.orderbook.bids, delta, seq)
                         logger.info(
-                            f"Orderbook YES update: {self.orderbook.bba} mid {self.orderbook.mid_price} micro {self.orderbook.micro_price} spread {self.orderbook.spread}"
+                            f"Orderbook YES update: {self.orderbook.bba} mid {self.orderbook.mid_price} micro {self.orderbook.micro_price:.2f} spread {self.orderbook.spread}"
                         )
 
                     elif data["side"] == "no":
@@ -56,8 +64,8 @@ class KalshiOrderbookHandler:
                         delta = Delta(price=100 - data["price"], delta=data["delta"])
                         self.orderbook.update(self.orderbook.asks, delta, seq)
                         logger.info(
-                            f"Orderbook NO update: {self.orderbook.bba} mid {self.orderbook.mid_price} micro {self.orderbook.micro_price} spread {self.orderbook.spread}"
+                            f"Orderbook NO  update: {self.orderbook.bba} mid {self.orderbook.mid_price} micro {self.orderbook.micro_price:.2f} spread {self.orderbook.spread}"
                         )
 
         except Exception as e:
-            raise Exception(f"Tick process error: {e}")
+            raise Exception(f"Orderbook process error: {e}")
