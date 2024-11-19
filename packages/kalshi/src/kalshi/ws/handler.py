@@ -33,8 +33,8 @@ class KalshiMessageHandler:
 
     def _handle_book_update_(self, message: Dict) -> None:
         logger.debug(f"book: {message}")
-        
-        # We send the full message here because we need additional orderbook update data, 
+
+        # We send the full message here because we need additional orderbook update data,
         # like the sequence.
         self.orderbook.process(message)
 
