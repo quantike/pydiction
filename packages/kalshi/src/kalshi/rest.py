@@ -7,11 +7,23 @@ from kalshi.authentication import Authenticator
 
 class KalshiRestClient:
     def __init__(self, state: State) -> None:
+        """
+        Initializes the Kalshi REST client with the given state and authenticator.
+
+        Args:
+            state (State): The shared state object containing configurations and parameters.
+        """
         self.state = state
         self.auth = Authenticator(self.state)
         self.is_connected = self._connect_()
 
     def _connect_(self) -> bool:
+        """
+        Connects to the Kalshi REST API using authentication credentials.
+
+        Returns:
+            bool: True if the login attempt is successful, False otherwise.
+        """
         # Retrieve the response body from a login attempt
         login_response: Dict[str, str] = self.auth.get_auth_headers_rest(
             self.state.rest_base_url
@@ -34,11 +46,14 @@ class KalshiRestClient:
         """
         Helper function that performs a deep fetch via pagination of results.
 
-        Attributes:
+        Args:
             path (str): The API endpoint path to fetch from.
             key (str): The key in the JSON response containing the list of items to fetch.
-            params (dict): Optional dictionary of query parameters.
-            headers (dict): Optional dictionary of headers.
+            params (Optional[Dict[str, Any]]): Optional dictionary of query parameters.
+            headers (Optional[Dict[str, Any]]): Optional dictionary of headers.
+
+        Returns:
+            List[Dict[str, Any]]: A list of dictionaries representing the fetched items.
         """
         if params is None:
             params = {}
@@ -71,6 +86,15 @@ class KalshiRestClient:
         return results
 
     def get_series(self, series_ticker: str):
+        """
+        Retrieves details for a given series by its ticker.
+
+        Args:
+            series_ticker (str): The series ticker to fetch details for.
+
+        Returns:
+            Response: The HTTP response object containing the series details.
+        """
         path = f"/trade-api/v2/series/{series_ticker}"
 
         return requests.get(self.state.rest_base_url + path)
@@ -82,6 +106,19 @@ class KalshiRestClient:
         with_nested_markets: bool = False,
         fetch_all: bool = False,
     ):
+        """
+        Retrieves a list of events, optionally filtered by parameters.
+
+        Args:
+            series_ticker (Optional[str]): The ticker of the series to filter events by.
+            status (Optional[str]): The status to filter events by.
+            with_nested_markets (bool): Whether to include nested markets in the response.
+            fetch_all (bool): Whether to fetch all pages of results.
+
+        Returns:
+            List[Dict[str, Any]]: A list of event dictionaries if fetch_all is True.
+            Otherwise, returns a list of markets.
+        """
         path = "/trade-api/v2/events"
 
         # HACK: Optional construction of params from function arguments
@@ -106,6 +143,15 @@ class KalshiRestClient:
         return data.get("markets", [])
 
     def get_event(self, event_ticker: str):
+        """
+        Retrieves details for a given event by its ticker.
+
+        Args:
+            event_ticker (str): The event ticker to fetch details for.
+
+        Returns:
+            Response: The HTTP response object containing the event details.
+        """
         path = f"/trade-api/v2/events/{event_ticker}"
 
         return requests.get(self.state.rest_base_url + path)
@@ -118,6 +164,20 @@ class KalshiRestClient:
         tickers: Optional[str] = None,
         fetch_all: bool = False,
     ):
+        """
+        Retrieves a list of markets, optionally filtered by parameters.
+
+        Args:
+            event_ticker (Optional[str]): The ticker of the event to filter markets by.
+            series_ticker (Optional[str]): The ticker of the series to filter markets by.
+            status (Optional[str]): The status to filter markets by.
+            tickers (Optional[str]): Specific market tickers to filter by.
+            fetch_all (bool): Whether to fetch all pages of results.
+
+        Returns:
+            List[Dict[str, Any]]: A list of market dictionaries if fetch_all is True.
+            Otherwise, returns a list of markets.
+        """
         method = "GET"
         path = "/trade-api/v2/markets"
         headers = self.auth.create_headers(method, path)
@@ -149,6 +209,15 @@ class KalshiRestClient:
         return data.get("markets", [])
 
     def get_market(self, market_ticker: str):
+        """
+        Retrieves details for a given market by its ticker.
+
+        Args:
+            market_ticker (str): The market ticker to fetch details for.
+
+        Returns:
+            Response: The HTTP response object containing the market details.
+        """
         method = "GET"
         path = f"/trade-api/v2/markets/{market_ticker}"
 
@@ -157,6 +226,16 @@ class KalshiRestClient:
         return requests.get(self.state.rest_base_url + path, headers=headers)
 
     def get_market_trades(self, ticker: str, fetch_all: bool = False):
+        """
+        Retrieves a list of trades for a given market ticker.
+
+        Args:
+            ticker (str): The ticker of the market to fetch trades for.
+            fetch_all (bool): Whether to fetch all pages of results.
+
+        Returns:
+            List[Dict[str, Any]]: A list of trade dictionaries.
+        """
         # Wrapper around _deep_fetch_ for getting market trades
         path = "/trade-api/v2/markets/trades"
         params = {"ticker": ticker}
@@ -174,6 +253,9 @@ class KalshiRestClient:
     def get_exchange_schedule(self):
         """
         Requests the exchange schedule.
+
+        Returns:
+            Response: The HTTP response object containing the exchange schedule.
         """
         method = "GET"
         path = "/trade-api/v2/exchange/schedule"
@@ -187,6 +269,9 @@ class KalshiRestClient:
         Requests the current exchange status.
 
         WARNING: This is an undocumented endpoint I happened upon.
+
+        Returns:
+            Response: The HTTP response object containing the exchange status.
         """
         method = "GET"
         path = "/trade-api/v2/exchange/status"
@@ -198,6 +283,9 @@ class KalshiRestClient:
     def get_exchange_announcements(self):
         """
         Requests exchange announcements, if any.
+
+        Returns:
+            Response: The HTTP response object containing exchange announcements.
         """
         method = "GET"
         path = "/trade-api/v2/exchange/announcements"
@@ -208,8 +296,13 @@ class KalshiRestClient:
 
     def get_portfolio_balance(self):
         """
-        Requests the portfolio balance for a logged-in user. Returns the balance in dollar cents,
-        and the available payout in dollar cents.
+        Requests the portfolio balance for a logged-in user.
+
+        Returns:
+            Response: The HTTP response object containing the portfolio balance details.
+
+        Raises:
+            Exception: If the user is not logged in.
         """
         if not self.is_connected:
             raise Exception("User not logged in")
@@ -222,7 +315,19 @@ class KalshiRestClient:
         return requests.get(self.state.rest_base_url + path, headers=headers)
 
     def get_portfolio_fills(self, ticker: str, fetch_all: bool = False):
-        """ """
+        """
+        Retrieves a list of fills for a given portfolio ticker.
+
+        Args:
+            ticker (str): The ticker to fetch fills for.
+            fetch_all (bool): Whether to fetch all pages of results.
+
+        Returns:
+            List[Dict[str, Any]]: A list of fill dictionaries.
+
+        Raises:
+            Exception: If the user is not logged in.
+        """
         if not self.is_connected:
             raise Exception("User not logged in")
 
