@@ -25,15 +25,16 @@ class KalshiRestClient:
         return False
 
     def _deep_fetch_(
-        self, path: str, key: str, params: Optional[Dict[str, Any]] = None
+        self, path: str, key: str, params: Optional[Dict[str, Any]] = None, headers: Optional[Dict[str, Any]] = None
     ) -> List[Dict[str, Any]]:
         """
         Helper function that performs a deep fetch via pagination of results.
 
         Attributes:
-            path(str): The API endpoint path to fetch from.
-            key(str): The key in the JSON response containing the list of items to fetch.
-            params(dict): Optional dictionary of query parameters.
+            path (str): The API endpoint path to fetch from.
+            key (str): The key in the JSON response containing the list of items to fetch.
+            params (dict): Optional dictionary of query parameters.
+            headers (dict): Optional dictionary of headers.
         """
         if params is None:
             params = {}
@@ -45,7 +46,7 @@ class KalshiRestClient:
             if next_cursor:
                 params["cursor"] = next_cursor
 
-            response = requests.get(self.state.rest_base_url + path, params=params)
+            response = requests.get(self.state.rest_base_url + path, params=params, headers=headers)
             response.raise_for_status()
 
             data = response.json()
@@ -69,6 +70,48 @@ class KalshiRestClient:
     def get_event(self, event_ticker: str):
         method = "GET"
         path = f"/trade-api/v2/events/{event_ticker}"
+
+        headers = self.auth.create_headers(method, path)
+
+        return requests.get(self.state.rest_base_url + path, headers=headers)
+
+    def get_markets(
+        self,
+        event_ticker: Optional[str] = None,
+        series_ticker: Optional[str] = None,
+        status: Optional[str] = None,
+        tickers: Optional[str] = None,
+        fetch_all: bool = False,
+    ):
+        method = "GET"
+        path = "/trade-api/v2/markets"
+        headers = self.auth.create_headers(method, path)
+
+        # HACK: Optional construction of params from function arguments
+        params = {
+            k: v
+            for k, v in {
+                "event_ticker": event_ticker,
+                "series_ticker": series_ticker,
+                "status": status,
+                "tickers": tickers,
+            }.items()
+            if v is not None
+        }
+
+        if fetch_all:
+            return self._deep_fetch_(path, params=params, headers=headers, key="markets")
+
+        # Single fetch if fetch_all is false
+        response = requests.get(self.state.rest_base_url + path, params=params, headers=headers)
+        response.raise_for_status()
+        data = response.json()
+
+        return data.get("markets", [])
+
+    def get_market(self, market_ticker: str):
+        method = "GET"
+        path = f"/trade-api/v2/markets/{market_ticker}"
 
         headers = self.auth.create_headers(method, path)
 
@@ -159,3 +202,11 @@ class KalshiRestClient:
         data = response.json()
 
         return data.get("fills", [])
+
+
+if __name__ == "__main__":
+    state = State()
+    api = KalshiRestClient(state)
+
+    response = api.get_markets(status="open", fetch_all=True)
+    print(response)
