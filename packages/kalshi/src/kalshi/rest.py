@@ -75,7 +75,13 @@ class KalshiRestClient:
 
         return requests.get(self.state.rest_base_url + path)
 
-    def get_events(self, series_ticker: Optional[str] = None, status: Optional[str] = None, with_nested_markets: bool = False, fetch_all: bool = False):
+    def get_events(
+        self,
+        series_ticker: Optional[str] = None,
+        status: Optional[str] = None,
+        with_nested_markets: bool = False,
+        fetch_all: bool = False,
+    ):
         path = "/trade-api/v2/events"
 
         # HACK: Optional construction of params from function arguments
@@ -84,7 +90,7 @@ class KalshiRestClient:
             for k, v in {
                 "series_ticker": series_ticker,
                 "status": status,
-                "with_nested_markets": with_nested_markets
+                "with_nested_markets": with_nested_markets,
             }.items()
             if v is not None
         }
@@ -93,9 +99,7 @@ class KalshiRestClient:
             return self._deep_fetch_(path, params=params, key="events")
 
         # Single fetch if fetch_all is false
-        response = requests.get(
-            self.state.rest_base_url + path, params=params
-        )
+        response = requests.get(self.state.rest_base_url + path, params=params)
         response.raise_for_status()
         data = response.json()
 
