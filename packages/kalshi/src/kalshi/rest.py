@@ -70,16 +70,41 @@ class KalshiRestClient:
 
         return results
 
-    def get_events(self):
-        raise NotImplementedError
+    def get_series(self, series_ticker: str):
+        path = f"/trade-api/v2/series/{series_ticker}"
+
+        return requests.get(self.state.rest_base_url + path)
+
+    def get_events(self, series_ticker: Optional[str] = None, status: Optional[str] = None, with_nested_markets: bool = False, fetch_all: bool = False):
+        path = "/trade-api/v2/events"
+
+        # HACK: Optional construction of params from function arguments
+        params = {
+            k: v
+            for k, v in {
+                "series_ticker": series_ticker,
+                "status": status,
+                "with_nested_markets": with_nested_markets
+            }.items()
+            if v is not None
+        }
+
+        if fetch_all:
+            return self._deep_fetch_(path, params=params, key="events")
+
+        # Single fetch if fetch_all is false
+        response = requests.get(
+            self.state.rest_base_url + path, params=params
+        )
+        response.raise_for_status()
+        data = response.json()
+
+        return data.get("markets", [])
 
     def get_event(self, event_ticker: str):
-        method = "GET"
         path = f"/trade-api/v2/events/{event_ticker}"
 
-        headers = self.auth.create_headers(method, path)
-
-        return requests.get(self.state.rest_base_url + path, headers=headers)
+        return requests.get(self.state.rest_base_url + path)
 
     def get_markets(
         self,
@@ -212,11 +237,3 @@ class KalshiRestClient:
         data = response.json()
 
         return data.get("fills", [])
-
-
-if __name__ == "__main__":
-    state = State()
-    api = KalshiRestClient(state)
-
-    response = api.get_markets(status="open", fetch_all=True)
-    print(response)
