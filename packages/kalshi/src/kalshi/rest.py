@@ -25,7 +25,11 @@ class KalshiRestClient:
         return False
 
     def _deep_fetch_(
-        self, path: str, key: str, params: Optional[Dict[str, Any]] = None, headers: Optional[Dict[str, Any]] = None
+        self,
+        path: str,
+        key: str,
+        params: Optional[Dict[str, Any]] = None,
+        headers: Optional[Dict[str, Any]] = None,
     ) -> List[Dict[str, Any]]:
         """
         Helper function that performs a deep fetch via pagination of results.
@@ -46,7 +50,9 @@ class KalshiRestClient:
             if next_cursor:
                 params["cursor"] = next_cursor
 
-            response = requests.get(self.state.rest_base_url + path, params=params, headers=headers)
+            response = requests.get(
+                self.state.rest_base_url + path, params=params, headers=headers
+            )
             response.raise_for_status()
 
             data = response.json()
@@ -100,10 +106,14 @@ class KalshiRestClient:
         }
 
         if fetch_all:
-            return self._deep_fetch_(path, params=params, headers=headers, key="markets")
+            return self._deep_fetch_(
+                path, params=params, headers=headers, key="markets"
+            )
 
         # Single fetch if fetch_all is false
-        response = requests.get(self.state.rest_base_url + path, params=params, headers=headers)
+        response = requests.get(
+            self.state.rest_base_url + path, params=params, headers=headers
+        )
         response.raise_for_status()
         data = response.json()
 
