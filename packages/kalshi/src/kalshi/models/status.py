@@ -21,7 +21,7 @@ class KalshiStatus:
     ) -> "KalshiStatus":
         instance = KalshiStatus(rest_client, polling_interval)
         try:
-            status_response = rest_client.get_exchange_status().json()
+            status_response = rest_client.get_exchange_status()
             instance._exchange_active = status_response.get("exchange_active", False)
             instance._trading_active = status_response.get("trading_active", False)
         except Exception as e:
@@ -64,7 +64,7 @@ class KalshiStatus:
         """Poll the exchange status at regular intervals and update the state."""
         while self._running:
             try:
-                response = self.rest_client.get_exchange_status().json()
+                response = self.rest_client.get_exchange_status()
                 self.update_status(response)
                 await asyncio.sleep(self.polling_interval)
             except Exception as e:

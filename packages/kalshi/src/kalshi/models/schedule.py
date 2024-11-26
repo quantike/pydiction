@@ -51,7 +51,7 @@ class KalshiSchedule:
             KalshiSchedule: A new instance with the exchange schedule.
         """
         # Fetch the schedule from the API
-        schedule = rest_client.get_exchange_schedule().json()
+        schedule = rest_client.get_exchange_schedule()
 
         # Parse maintenance windows
         maintenance_windows = [

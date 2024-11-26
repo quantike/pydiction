@@ -3,7 +3,7 @@ import requests
 
 from common.state import State
 from kalshi.authentication import Authenticator
-from kalshi.models.rest.portfolio import EventPosition, Fill, MarketPosition, Order, OrderStatus
+from kalshi.models.rest.portfolio import EventPosition, Fill, MarketPosition, Order, OrderStatus, PortfolioBalance
 
 
 class KalshiRestClient:
@@ -251,49 +251,43 @@ class KalshiRestClient:
 
         return data.get("trades", [])
 
-    def get_exchange_schedule(self):
+    def get_exchange_schedule(self) -> Dict[str, Any]:
         """
         Requests the exchange schedule.
 
         Returns:
-            Response: The HTTP response object containing the exchange schedule.
+            Dict[str, Any]: A dictionary containing the exchange schedule.
         """
-        method = "GET"
         path = "/trade-api/v2/exchange/schedule"
+        response = requests.get(self.state.rest_base_url + path)
+        response.raise_for_status()
+        return response.json()
 
-        headers = self.auth.create_headers(method, path)
-
-        return requests.get(self.state.rest_base_url + path, headers=headers)
-
-    def get_exchange_status(self):
+    def get_exchange_status(self) -> Dict[str, Any]:
         """
         Requests the current exchange status.
 
         WARNING: This is an undocumented endpoint I happened upon.
 
         Returns:
-            Response: The HTTP response object containing the exchange status.
+            Dict[str, Any]: A dictionary containing the exchange status.
         """
-        method = "GET"
         path = "/trade-api/v2/exchange/status"
+        response = requests.get(self.state.rest_base_url + path)
+        response.raise_for_status()
+        return response.json()
 
-        headers = self.auth.create_headers(method, path)
-
-        return requests.get(self.state.rest_base_url + path, headers=headers)
-
-    def get_exchange_announcements(self):
+    def get_exchange_announcements(self) -> Dict[str, Any]:
         """
         Requests exchange announcements, if any.
 
         Returns:
-            Response: The HTTP response object containing exchange announcements.
+            Dict[str, Any]: A dictionary containing the exchange announcements.
         """
-        method = "GET"
         path = "/trade-api/v2/exchange/announcements"
-
-        headers = self.auth.create_headers(method, path)
-
-        return requests.get(self.state.rest_base_url + path, headers=headers)
+        response = requests.get(self.state.rest_base_url + path)
+        response.raise_for_status()
+        return response.json()
 
     def get_portfolio_balance(self):
         """
@@ -310,10 +304,17 @@ class KalshiRestClient:
 
         method = "GET"
         path = "/trade-api/v2/portfolio/balance"
-
         headers = self.auth.create_headers(method, path)
 
-        return requests.get(self.state.rest_base_url + path, headers=headers)
+        response = requests.get(self.state.rest_base_url + path, headers=headers)
+        response.raise_for_status()
+        pf_balance_data = response.json()
+
+        return PortfolioBalance(
+            balance=pf_balance_data.get("balance", 0),
+            payout=pf_balance_data.get("payout", 0)
+        )
+
 
     def get_fills(self, ticker: Optional[str] = None, order_id: Optional[str] = None, fetch_all: bool = False):
         """
@@ -484,5 +485,5 @@ if __name__ == "__main__":
     state = State()
     api = KalshiRestClient(state)
 
-    print(api.get_fills())
+    print(api.get_portfolio_balance())
 
