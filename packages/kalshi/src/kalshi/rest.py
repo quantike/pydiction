@@ -3,6 +3,7 @@ import requests
 
 from common.state import State
 from kalshi.authentication import Authenticator
+from kalshi.models.rest.portfolio import EventPosition, MarketPosition, Order, OrderStatus
 
 
 class KalshiRestClient:
@@ -346,3 +347,128 @@ class KalshiRestClient:
         data = response.json()
 
         return data.get("fills", [])
+
+    def get_event_positions(
+        self,
+        event_ticker: Optional[str] = None,
+        fetch_all: bool = False
+    ) -> List[EventPosition]:
+        if not self.is_connected:
+            raise Exception("User not logged in")
+
+        method = "GET"
+        path = "/trade-api/v2/portfolio/positions"
+        headers = self.auth.create_headers(method, path)
+
+        # Optional construction of params from function arguments
+        params = {
+            k: v
+            for k, v in {
+                "event_ticker": event_ticker,
+            }.items()
+            if v is not None
+        }
+
+        if fetch_all:
+            event_positions_data = self._deep_fetch_(
+                path, params=params, headers=headers, key="event_positions"
+            )
+        else:
+            # Single fetch if fetch_all is False
+            response = requests.get(
+                self.state.rest_base_url + path, params=params, headers=headers
+            )
+            response.raise_for_status()
+            event_positions_data = response.json().get("event_positions", [])
+
+        event_positions = [EventPosition.from_dict(event_position_data) for event_position_data in event_positions_data]
+        return event_positions
+
+    def get_market_positions(
+            self,
+            ticker: Optional[str] = None,
+            count_filter: Optional[str] = None,
+            settlement_status: Optional[str] = None,
+            fetch_all: bool = False
+        ) -> List[MarketPosition]:
+            if not self.is_connected:
+                raise Exception("User not logged in")
+
+            method = "GET"
+            path = "/trade-api/v2/portfolio/positions"
+            headers = self.auth.create_headers(method, path)
+
+            # Optional construction of params from function arguments
+            params = {
+                k: v
+                for k, v in {
+                    "ticker": ticker,
+                    "count_filter": count_filter,
+                    "settlement_status": settlement_status
+                }.items()
+                if v is not None
+            }
+
+            if fetch_all:
+                market_positions_data = self._deep_fetch_(
+                    path, params=params, headers=headers, key="market_positions"
+                )
+            else:
+                # Single fetch if fetch_all is False
+                response = requests.get(
+                    self.state.rest_base_url + path, params=params, headers=headers
+                )
+                response.raise_for_status()
+                market_positions_data = response.json().get("market_positions", [])
+
+            market_positions = [MarketPosition.from_dict(market_position_data) for market_position_data in market_positions_data]
+            return market_positions
+
+    def get_orders(
+        self, 
+        ticker: Optional[str] = None,
+        event_ticker: Optional[str] = None,
+        status: Optional[OrderStatus] = None,
+        fetch_all: bool = False
+    ) -> List[Order]:
+        if not self.is_connected:
+            raise Exception("User not logged in")
+
+        method = "GET"
+        path = "/trade-api/v2/portfolio/orders"
+        headers = self.auth.create_headers(method, path)
+
+        # Optional construction of params from function arguments
+        params = {
+            k: v
+            for k, v in {
+                "ticker": ticker,
+                "event_ticker": event_ticker,
+                "status": status,
+            }.items()
+            if v is not None
+        }
+
+        if fetch_all:
+            orders_data = self._deep_fetch_(
+                path, params=params, headers=headers, key="orders"
+            )
+        else:
+            # Single fetch if fetch_all is false
+            response = requests.get(
+                self.state.rest_base_url + path, params=params, headers=headers
+            )
+            response.raise_for_status()
+            orders_data = response.json().get("orders", [])
+
+        # Convert the list of order dictionaries to a list of Order dataclass instances
+        orders = [Order.from_dict(order_data) for order_data in orders_data]
+        return orders
+
+
+if __name__ == "__main__":
+    state = State()
+    api = KalshiRestClient(state)
+
+    print(api)
+
