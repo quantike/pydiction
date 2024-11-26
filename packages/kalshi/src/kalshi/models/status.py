@@ -21,7 +21,7 @@ class KalshiStatus:
     ) -> "KalshiStatus":
         instance = KalshiStatus(rest_client, polling_interval)
         try:
-            status_response = rest_client.get_exchange_status().json()
+            status_response = rest_client.get_exchange_status()
             instance._exchange_active = status_response.get("exchange_active", False)
             instance._trading_active = status_response.get("trading_active", False)
         except Exception as e:
@@ -47,7 +47,7 @@ class KalshiStatus:
     def is_trading_active(self) -> bool:
         return self.status == "ACTIVE_TRADING_ENABLED"
 
-    def update_status(self, new_status: Dict[str, bool]) -> None:
+    def _update_status_(self, new_status: Dict[str, bool]) -> None:
         exchange_active = new_status.get("exchange_active", self._exchange_active)
         trading_active = new_status.get("trading_active", self._trading_active)
 
@@ -60,12 +60,12 @@ class KalshiStatus:
             self._trading_active = trading_active
             logger.info(f"Exchange status changed from {old_state} to {self.status}")
 
-    async def poll_status(self):
+    async def _poll_status_(self):
         """Poll the exchange status at regular intervals and update the state."""
         while self._running:
             try:
-                response = self.rest_client.get_exchange_status().json()
-                self.update_status(response)
+                response = self.rest_client.get_exchange_status()
+                self._update_status_(response)
                 await asyncio.sleep(self.polling_interval)
             except Exception as e:
                 logger.error(f"Error polling exchange status: {e}")
@@ -74,7 +74,7 @@ class KalshiStatus:
     async def run(self):
         """Start the status polling loop."""
         self._running = True
-        await self.poll_status()
+        await self._poll_status_()
 
     def shutdown(self):
         """Stop the status polling loop."""
