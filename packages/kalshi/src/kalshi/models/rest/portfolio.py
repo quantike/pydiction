@@ -3,20 +3,24 @@ from dataclasses import asdict, dataclass
 from typing import Any, Dict, Optional
 from datetime import datetime
 
+
 class OrderAction(Enum):
     BUY = "buy"
     SELL = "sell"
     UNKNOWN = "OrderActionUnknown"
+
 
 class OrderSide(Enum):
     YES = "yes"
     NO = "no"
     UNSET = "SIDE_UNSET"
 
+
 @dataclass
 class PortfolioBalance:
     balance: int
     payout: int
+
 
 @dataclass
 class Fill:
@@ -32,7 +36,7 @@ class Fill:
     trade_id: str
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> 'Fill':
+    def from_dict(cls, data: Dict[str, Any]) -> "Fill":
         """
         Converts a dictionary to a Fill dataclass instance.
 
@@ -52,19 +56,22 @@ class Fill:
             count=data["count"],
             is_taker=data["is_taker"],
             order_id=data["order_id"],
-            trade_id=data["trade_id"]
+            trade_id=data["trade_id"],
         )
+
 
 class OrderType(Enum):
     MARKET = "market"
     LIMIT = "limit"
     UNKNOWN = "OrderTypeUnknown"
 
+
 class OrderStatus(Enum):
     RESTING = "resting"
     CANCELED = "canceled"
     EXECUTED = "executed"
     PENDING = "pending"
+
 
 @dataclass
 class Order:
@@ -101,7 +108,7 @@ class Order:
     taker_self_trade_cancel_count: Optional[int] = None
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> 'Order':
+    def from_dict(cls, data: Dict[str, Any]) -> "Order":
         """
         Converts a dictionary to an Order dataclass instance.
 
@@ -124,8 +131,16 @@ class Order:
             no_price=data["no_price"],
             yes_price=data["yes_price"],
             created_time=int(datetime.fromisoformat(data["created_time"]).timestamp()),
-            last_update_time=int(datetime.fromisoformat(data["last_update_time"]).timestamp()) if "last_update_time" in data else None,
-            expiration_time=int(datetime.fromisoformat(data["expiration_time"]).timestamp()) if "expiration_time" in data else None,
+            last_update_time=int(
+                datetime.fromisoformat(data["last_update_time"]).timestamp()
+            )
+            if "last_update_time" in data
+            else None,
+            expiration_time=int(
+                datetime.fromisoformat(data["expiration_time"]).timestamp()
+            )
+            if "expiration_time" in data
+            else None,
             amend_count=data.get("amend_count"),
             amend_taker_fill_count=data.get("amend_taker_fill_count"),
             close_cancel_count=data.get("close_cancel_count"),
@@ -159,6 +174,7 @@ class Order:
         data["status"] = self.status.value
         return data
 
+
 @dataclass
 class EventPosition:
     event_ticker: str
@@ -169,7 +185,7 @@ class EventPosition:
     fees_paid: int
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> 'EventPosition':
+    def from_dict(cls, data: Dict[str, Any]) -> "EventPosition":
         """
         Converts a dictionary to a EventPosition dataclass instance.
 
@@ -185,13 +201,15 @@ class EventPosition:
             resting_order_count=data["resting_order_count"],
             realized_pnl=data["realized_pnl"],
             total_cost=data["total_cost"],
-            fees_paid=data["fees_paid"]
+            fees_paid=data["fees_paid"],
         )
+
 
 class MarketSide(Enum):
     YES = "yes"
     NO = "no"
     NEUTRAL = "neutral"
+
 
 @dataclass
 class MarketPosition:
@@ -205,7 +223,7 @@ class MarketPosition:
     last_updated_ts: int
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> 'MarketPosition':
+    def from_dict(cls, data: Dict[str, Any]) -> "MarketPosition":
         """
         Converts a dictionary to a MarketPosition dataclass instance.
 
@@ -223,7 +241,9 @@ class MarketPosition:
             realized_pnl=data["realized_pnl"],
             total_traded=data["total_traded"],
             fees_paid=data["fees_paid"],
-            last_updated_ts=int(datetime.fromisoformat(data["last_updated_ts"]).timestamp())
+            last_updated_ts=int(
+                datetime.fromisoformat(data["last_updated_ts"]).timestamp()
+            ),
         )
 
     @property
@@ -234,6 +254,7 @@ class MarketPosition:
             return MarketSide.NO
         else:
             return MarketSide.NEUTRAL
+
 
 @dataclass
 class Settlement:
