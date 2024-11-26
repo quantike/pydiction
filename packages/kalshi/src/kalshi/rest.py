@@ -3,7 +3,7 @@ import requests
 
 from common.state import State
 from kalshi.authentication import Authenticator
-from kalshi.models.rest.portfolio import EventPosition, MarketPosition, Order, OrderStatus
+from kalshi.models.rest.portfolio import EventPosition, Fill, MarketPosition, Order, OrderStatus
 
 
 class KalshiRestClient:
@@ -315,12 +315,13 @@ class KalshiRestClient:
 
         return requests.get(self.state.rest_base_url + path, headers=headers)
 
-    def get_portfolio_fills(self, ticker: str, fetch_all: bool = False):
+    def get_fills(self, ticker: Optional[str] = None, order_id: Optional[str] = None, fetch_all: bool = False):
         """
         Retrieves a list of fills for a given portfolio ticker.
 
         Args:
-            ticker (str): The ticker to fetch fills for.
+            ticker (Optional[str]): The ticker to fetch fills for.
+            order_id (Optional[str]): The trade order ID.
             fetch_all (bool): Whether to fetch all pages of results.
 
         Returns:
@@ -332,21 +333,34 @@ class KalshiRestClient:
         if not self.is_connected:
             raise Exception("User not logged in")
 
+        method = "GET"
         path = "/trade-api/v2/portfolio/fills"
-        params = {"ticker": ticker}
+        headers = self.auth.create_headers(method, path)
+
+        # Optional construction of params from function arguments
+        params = {
+            k: v
+            for k, v in {
+                "ticker": ticker,
+                "order_id": order_id,
+            }.items()
+            if v is not None
+        }
 
         if fetch_all:
-            return self._deep_fetch_(path, params=params, key="fills")
+            fills_data = self._deep_fetch_(
+                path, params=params, headers=headers, key="fills"
+            )
+        else:
+            # Single fetch if fetch_all is False
+            response = requests.get(
+                self.state.rest_base_url + path, params=params, headers=headers
+            )
+            response.raise_for_status()
+            fills_data = response.json().get("fills", [])
 
-        # Single request if fetch_all is False
-        headers = self.auth.create_headers("GET", path)
-        response = requests.get(
-            self.state.rest_base_url + path, headers=headers, params=params
-        )
-        response.raise_for_status()
-        data = response.json()
-
-        return data.get("fills", [])
+        fills = [Fill.from_dict(fill_data) for fill_data in fills_data]
+        return fills
 
     def get_event_positions(
         self,
@@ -470,5 +484,5 @@ if __name__ == "__main__":
     state = State()
     api = KalshiRestClient(state)
 
-    print(api)
+    print(api.get_fills())
 

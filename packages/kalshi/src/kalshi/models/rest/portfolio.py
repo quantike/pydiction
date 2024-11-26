@@ -3,14 +3,6 @@ from dataclasses import asdict, dataclass
 from typing import Any, Dict, Optional
 from datetime import datetime
 
-@dataclass
-class Balance:
-    pass
-
-@dataclass
-class Fill:
-    pass
-
 class OrderAction(Enum):
     BUY = "buy"
     SELL = "sell"
@@ -20,6 +12,48 @@ class OrderSide(Enum):
     YES = "yes"
     NO = "no"
     UNSET = "SIDE_UNSET"
+
+@dataclass
+class PortfolioBalance:
+    balance: int
+    payout: int
+
+@dataclass
+class Fill:
+    ticker: str
+    created_time: int
+    side: OrderSide
+    action: OrderAction
+    yes_price: int
+    no_price: int
+    count: int
+    is_taker: bool
+    order_id: str
+    trade_id: str
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> 'Fill':
+        """
+        Converts a dictionary to a Fill dataclass instance.
+
+        Args:
+            data (Dict[str, Any]): The dictionary containing fill data.
+
+        Returns:
+            Fill: A fill dataclass instance.
+        """
+        return cls(
+            ticker=data["ticker"],
+            created_time=int(datetime.fromisoformat(data["created_time"]).timestamp()),
+            side=OrderSide(data["side"]),
+            action=OrderAction(data["action"]),
+            yes_price=data["yes_price"],
+            no_price=data["no_price"],
+            count=data["count"],
+            is_taker=data["is_taker"],
+            order_id=data["order_id"],
+            trade_id=data["trade_id"]
+        )
 
 class OrderType(Enum):
     MARKET = "market"
