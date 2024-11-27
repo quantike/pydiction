@@ -1,10 +1,9 @@
 from dataclasses import dataclass
 from datetime import datetime, time
 from typing import Dict, List, Optional, Tuple
-from zoneinfo import ZoneInfo
 
 from kalshi.rest import KalshiRestClient
-
+from zoneinfo import ZoneInfo
 
 # Temporary hours, which are found at https://help.kalshi.com/faq/what-are-trading-hours
 TEMPORARY_HOURS = {

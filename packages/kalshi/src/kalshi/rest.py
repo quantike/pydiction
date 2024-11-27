@@ -1,7 +1,8 @@
 from typing import Any, Dict, List, Optional
-import requests
 
+import requests
 from common.state import State
+
 from kalshi.authentication import Authenticator
 from kalshi.models.rest.portfolio import (
     EventPosition,

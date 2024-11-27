@@ -1,9 +1,9 @@
-from loguru import logger
 from typing import Any, Dict
 
-from common.models.orderbook import Orderbook
-from common.models.level import Level
 from common.models.delta import Delta
+from common.models.level import Level
+from common.models.orderbook import Orderbook
+from loguru import logger
 
 
 class KalshiOrderbookHandler:

@@ -1,14 +1,14 @@
-from common.models.orderbook import Orderbook
-from common.models.trade import Trade
-from loguru import logger
 from typing import Dict
 
+from common.models.orderbook import Orderbook
 from common.models.tick import Tick
+from common.models.trade import Trade
 from kalshi.models.lifecycle import Lifecycle
 from kalshi.ws.handlers.lifecycles import KalshiLifecycleHandler
 from kalshi.ws.handlers.orderbooks import KalshiOrderbookHandler
 from kalshi.ws.handlers.ticks import KalshiTickHandler
 from kalshi.ws.handlers.trades import KalshiTradeHandler
+from loguru import logger
 
 
 class KalshiMessageHandler:

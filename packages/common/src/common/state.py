@@ -7,7 +7,6 @@ from loguru import logger
 
 from common.utils import load_from_yaml
 
-
 REFRESH_PERIOD = 900  # Refresh period for config refresh in Pydiction
 
 
