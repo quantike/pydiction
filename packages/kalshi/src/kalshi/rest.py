@@ -297,15 +297,12 @@ class KalshiRestClient:
         response.raise_for_status()
         return response.json()
 
-    def get_portfolio_balance(self):
+    def get_portfolio_balance(self) -> PortfolioBalance:
         """
         Requests the portfolio balance for a logged-in user.
 
         Returns:
-            Response: The HTTP response object containing the portfolio balance details.
-
-        Raises:
-            Exception: If the user is not logged in.
+            PortfolioBalance: A PortfolioBalance instance.
         """
         if not self.is_connected:
             raise Exception("User not logged in")
@@ -328,7 +325,7 @@ class KalshiRestClient:
         ticker: Optional[str] = None,
         order_id: Optional[str] = None,
         fetch_all: bool = False,
-    ):
+    ) -> List[Fill]:
         """
         Retrieves a list of fills for a given portfolio ticker.
 
@@ -338,10 +335,7 @@ class KalshiRestClient:
             fetch_all (bool): Whether to fetch all pages of results.
 
         Returns:
-            List[Dict[str, Any]]: A list of fill dictionaries.
-
-        Raises:
-            Exception: If the user is not logged in.
+            List[Fill]: A list of Fill instances.
         """
         if not self.is_connected:
             raise Exception("User not logged in")
@@ -378,6 +372,16 @@ class KalshiRestClient:
     def get_event_positions(
         self, event_ticker: Optional[str] = None, fetch_all: bool = False
     ) -> List[EventPosition]:
+        """
+        Retrieves a list of EventPositions for a given even ticker.
+
+        Args:
+            event_ticker (Optional[str]): The event ticker to fetch EventPositions.
+            fetch_all (bool): Whether to fetch all pages of results.
+
+        Returns:
+            List[EventPosition]: A list of EventPosition instances.
+        """
         if not self.is_connected:
             raise Exception("User not logged in")
 
@@ -415,10 +419,24 @@ class KalshiRestClient:
     def get_market_positions(
         self,
         ticker: Optional[str] = None,
+        event_ticker: Optional[str] = None,
         count_filter: Optional[str] = None,
         settlement_status: Optional[str] = None,
         fetch_all: bool = False,
     ) -> List[MarketPosition]:
+        """
+        Retrieves a list of MarketPositions for a given event ticker.
+
+        Args:
+            ticker (Optional[str]): The ticker for the MarketPosition.
+            event_ticker (Optional[str]): The event ticker to fetch MarketPositions.
+            count_filter (Optional[str]): Restricts the positions to those with any of following fields with non-zero values, as a comma separated list. The following values are accepted: position, total_traded, resting_order_count.
+            settlement_status (Optional[str]): Settlement status of the markets to return. Defaults to unsettled. The following values are accepted: all, settled, unsettled.
+            fetch_all (bool): Whether to fetch all pages of results.
+
+        Returns:
+            List[MarketPosition]: A list of MarketPosition instances.
+        """
         if not self.is_connected:
             raise Exception("User not logged in")
 
@@ -431,6 +449,7 @@ class KalshiRestClient:
             k: v
             for k, v in {
                 "ticker": ticker,
+                "event_ticker": event_ticker,
                 "count_filter": count_filter,
                 "settlement_status": settlement_status,
             }.items()
@@ -462,6 +481,18 @@ class KalshiRestClient:
         status: Optional[OrderStatus] = None,
         fetch_all: bool = False,
     ) -> List[Order]:
+        """
+        Retrieves a list of Orders for a given ticker.
+
+        Args:
+            ticker (Optional[str]): The ticker for the Order.
+            event_ticker (Optional[str]): The event ticker to fetch Orders.
+            status (Optional[OrderStatus]): Restricts the response to orders that have a certain status: resting, canceled, or executed.           
+            fetch_all (bool): Whether to fetch all pages of results.
+
+        Returns:
+            List[Order]: A list of Order instances.
+        """
         if not self.is_connected:
             raise Exception("User not logged in")
 
@@ -496,9 +527,33 @@ class KalshiRestClient:
         orders = [Order.from_dict(order_data) for order_data in orders_data]
         return orders
 
+    def get_order(self, order_id: str) -> Order:
+        """
+        Fetches a single Order with an order_id.
+
+        Args:
+            order_id (str): Order ID input for the desired order. Should look like a UUIDv4 str.
+        
+        Returns:
+            Order: The requested Order instance.
+        """
+        if not self.is_connected:
+            raise Exception("User not logged in")
+
+        method = "GET"
+        path = f"/trade-api/v2/portfolio/orders/{order_id}"
+        headers = self.auth.create_headers(method, path)
+
+        response = requests.get(self.state.rest_base_url + path, headers=headers)
+        response.raise_for_status()
+        order_data = response.json().get("order", {})
+
+        return Order.from_dict(order_data)
+
+
 
 if __name__ == "__main__":
     state = State()
     api = KalshiRestClient(state)
 
-    print(api.get_portfolio_balance())
+    print(api.get_order(order_id="8b0a08cf-4ecb-4171-ac38-9f0e56e6e441"))
