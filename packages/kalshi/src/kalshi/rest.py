@@ -598,10 +598,3 @@ class KalshiRestClient:
         order_data = response.json().get("order", {})
 
         return Order.from_dict(order_data)
-
-
-if __name__ == "__main__":
-    state = State()
-    api = KalshiRestClient(state)
-
-    print(api.get_event(event_ticker="BTCMAX100-24"))
