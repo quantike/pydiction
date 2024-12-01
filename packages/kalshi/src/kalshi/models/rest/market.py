@@ -10,11 +10,9 @@ class SettlementSource:
     url: str
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> 'SettlementSource':
-        return cls(
-            name=data['name'],
-            url=data['url']
-        )
+    def from_dict(cls, data: Dict[str, Any]) -> "SettlementSource":
+        return cls(name=data["name"], url=data["url"])
+
 
 @dataclass
 class Series:
@@ -27,22 +25,25 @@ class Series:
     title: str
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> 'Series':
+    def from_dict(cls, data: Dict[str, Any]) -> "Series":
         return cls(
-            category=data['category'],
-            contract_url=data['contract_url'],
-            frequency=data['frequency'],
-            settlement_sources=[SettlementSource.from_dict(source) for source in data['settlement_sources']],
-            tags=data['tags'],
-            ticker=data['ticker'],
-            title=data['title']
+            category=data["category"],
+            contract_url=data["contract_url"],
+            frequency=data["frequency"],
+            settlement_sources=[
+                SettlementSource.from_dict(source)
+                for source in data["settlement_sources"]
+            ],
+            tags=data["tags"],
+            ticker=data["ticker"],
+            title=data["title"],
         )
 
 
 @dataclass
 class Event:
     event_ticker: str
-    series_ticker: str 
+    series_ticker: str
     category: str
     mutually_exclusive: bool
     sub_title: str
@@ -51,21 +52,25 @@ class Event:
     strike_period: Optional[str] = None
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> 'Event':
+    def from_dict(cls, data: Dict[str, Any]) -> "Event":
         return cls(
-            event_ticker=data['event_ticker'],
-            series_ticker=data['series_ticker'],
-            category=data['category'],
-            mutually_exclusive=data['mutually_exclusive'],
-            title=data['title'],
-            sub_title=data['sub_title'],
-            strike_date=datetime.fromisoformat(data['strike_date']) if 'strike_date' in data else None,
-            strike_period=data['strike_period'] if 'strike_period' in data else None
+            event_ticker=data["event_ticker"],
+            series_ticker=data["series_ticker"],
+            category=data["category"],
+            mutually_exclusive=data["mutually_exclusive"],
+            title=data["title"],
+            sub_title=data["sub_title"],
+            strike_date=datetime.fromisoformat(data["strike_date"])
+            if "strike_date" in data
+            else None,
+            strike_period=data["strike_period"] if "strike_period" in data else None,
         )
+
 
 class MarketType(Enum):
     BINARY = "binary"
     SCALAR = "scalar"
+
 
 class MarketStrikeType(Enum):
     UNKOWN = "unkown"
@@ -77,9 +82,11 @@ class MarketStrikeType(Enum):
     FUNCTIONAL = "functional"
     CUSTOM = "custom"
 
+
 class MarketPriceUnits(Enum):
     CENT = "usd_cent"
     CENTICENT = "usd_centi_cent"
+
 
 class MarketResult(Enum):
     UNDETERMINED = ""
@@ -88,6 +95,7 @@ class MarketResult(Enum):
     VOID = "void"
     ALL_YES = "all_yes"
     ALL_NO = "all_no"
+
 
 @dataclass
 class Market:
@@ -135,55 +143,67 @@ class Market:
     settlement_value: Optional[int] = None
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> 'Market':
+    def from_dict(cls, data: Dict[str, Any]) -> "Market":
         return cls(
-            can_close_early=data['can_close_early'],
-            category=data['category'],
-            close_time=datetime.fromisoformat(data['close_time']),
-            event_ticker=data['event_ticker'],
-            expiration_time=datetime.fromisoformat(data['expiration_time']),
-            expiration_value=data['expiration_value'],
-            floor_strike=data['floor_strike'],
-            last_price=data['last_price'],
-            latest_expiration_time=datetime.fromisoformat(data['latest_expiration_time']),
-            liquidity=data['liquidity'],
-            market_type=MarketType(data['market_type']),
-            no_ask=data['no_ask'],
-            no_bid=data['no_bid'],
-            no_sub_title=data['no_sub_title'],
-            notional_value=data['notional_value'],
-            open_interest=data['open_interest'],
-            open_time=datetime.fromisoformat(data['open_time']),
-            previous_price=data['previous_price'],
-            previous_yes_ask=data['previous_yes_ask'],
-            previous_yes_bid=data['previous_yes_bid'],
-            response_price_units=MarketPriceUnits(data['response_price_units']),
-            result=MarketResult(data['result']),
-            risk_limit_cents=data['risk_limit_cents'],
-            rules_primary=data['rules_primary'],
-            rules_secondary=data['rules_secondary'],
-            settlement_timer_seconds=data['settlement_timer_seconds'],
-            status=data['status'],
-            strike_type=MarketStrikeType(data['strike_type']),
-            subtitle=data['subtitle'],
-            tick_size=data['tick_size'],
-            ticker=data['ticker'],
-            title=data['title'],
-            volume=data['volume'],
-            volume_24h=data['volume_24h'],
-            yes_ask=data['yes_ask'],
-            yes_bid=data['yes_bid'],
-            yes_sub_title=data['yes_sub_title'],
-            custom_strike=data['custom_strike'] if 'custom_strike' in data else None,
-            functional_strike=data.get('functional_strike'),
-            expected_expiration_time=datetime.fromisoformat(data['expected_expiration_time']) if 'expected_expiration_time' in data else None,
-            fee_waiver_expiration_time=datetime.fromisoformat(data['fee_waiver_expiration_time']) if 'fee_waiver_expiration_time' in data else None,
-            settlement_value=data.get('settlement_value')
+            can_close_early=data["can_close_early"],
+            category=data["category"],
+            close_time=datetime.fromisoformat(data["close_time"]),
+            event_ticker=data["event_ticker"],
+            expiration_time=datetime.fromisoformat(data["expiration_time"]),
+            expiration_value=data["expiration_value"],
+            floor_strike=data["floor_strike"],
+            last_price=data["last_price"],
+            latest_expiration_time=datetime.fromisoformat(
+                data["latest_expiration_time"]
+            ),
+            liquidity=data["liquidity"],
+            market_type=MarketType(data["market_type"]),
+            no_ask=data["no_ask"],
+            no_bid=data["no_bid"],
+            no_sub_title=data["no_sub_title"],
+            notional_value=data["notional_value"],
+            open_interest=data["open_interest"],
+            open_time=datetime.fromisoformat(data["open_time"]),
+            previous_price=data["previous_price"],
+            previous_yes_ask=data["previous_yes_ask"],
+            previous_yes_bid=data["previous_yes_bid"],
+            response_price_units=MarketPriceUnits(data["response_price_units"]),
+            result=MarketResult(data["result"]),
+            risk_limit_cents=data["risk_limit_cents"],
+            rules_primary=data["rules_primary"],
+            rules_secondary=data["rules_secondary"],
+            settlement_timer_seconds=data["settlement_timer_seconds"],
+            status=data["status"],
+            strike_type=MarketStrikeType(data["strike_type"]),
+            subtitle=data["subtitle"],
+            tick_size=data["tick_size"],
+            ticker=data["ticker"],
+            title=data["title"],
+            volume=data["volume"],
+            volume_24h=data["volume_24h"],
+            yes_ask=data["yes_ask"],
+            yes_bid=data["yes_bid"],
+            yes_sub_title=data["yes_sub_title"],
+            custom_strike=data["custom_strike"] if "custom_strike" in data else None,
+            functional_strike=data.get("functional_strike"),
+            expected_expiration_time=datetime.fromisoformat(
+                data["expected_expiration_time"]
+            )
+            if "expected_expiration_time" in data
+            else None,
+            fee_waiver_expiration_time=datetime.fromisoformat(
+                data["fee_waiver_expiration_time"]
+            )
+            if "fee_waiver_expiration_time" in data
+            else None,
+            settlement_value=data.get("settlement_value"),
         )
+
 
 class TradeSide(Enum):
     YES = "yes"
     NO = "no"
+
 
 @dataclass
 class Trade:
@@ -196,13 +216,13 @@ class Trade:
     trade_id: str
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> 'Trade':
+    def from_dict(cls, data: Dict[str, Any]) -> "Trade":
         return cls(
-            created_time=data['created_time'],
-            ticker=data['ticker'],
-            yes_price=data['yes_price'],
-            no_price=data['no_price'],
-            count=data['count'],
-            taker_side=TradeSide(data['taker_side']),
-            trade_id=data['trade_id']
+            created_time=data["created_time"],
+            ticker=data["ticker"],
+            yes_price=data["yes_price"],
+            no_price=data["no_price"],
+            count=data["count"],
+            taker_side=TradeSide(data["taker_side"]),
+            trade_id=data["trade_id"],
         )

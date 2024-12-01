@@ -266,7 +266,6 @@ class KalshiRestClient:
 
         return Market.from_dict(market_data)
 
-
     def get_trades(self, ticker: str, fetch_all: bool = False) -> List[Trade]:
         """
         Retrieves a list of trades for a given market ticker.
@@ -537,7 +536,7 @@ class KalshiRestClient:
         Args:
             ticker (Optional[str]): The ticker for the Order.
             event_ticker (Optional[str]): The event ticker to fetch Orders.
-            status (Optional[OrderStatus]): Restricts the response to orders that have a certain status: resting, canceled, or executed.           
+            status (Optional[OrderStatus]): Restricts the response to orders that have a certain status: resting, canceled, or executed.
             fetch_all (bool): Whether to fetch all pages of results.
 
         Returns:
@@ -583,7 +582,7 @@ class KalshiRestClient:
 
         Args:
             order_id (str): Order ID input for the desired order. Should look like a UUIDv4 str.
-        
+
         Returns:
             Order: The requested Order instance.
         """
@@ -599,7 +598,6 @@ class KalshiRestClient:
         order_data = response.json().get("order", {})
 
         return Order.from_dict(order_data)
-
 
 
 if __name__ == "__main__":
