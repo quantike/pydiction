@@ -5,7 +5,7 @@ import requests
 from common.state import State
 
 from kalshi.authentication import Authenticator
-from kalshi.models.rest.market import Event, Market, Trade
+from kalshi.models.rest.market import Event, Market, Series, Trade
 from kalshi.models.rest.portfolio import (
     EventPosition,
     Fill,
@@ -96,7 +96,7 @@ class KalshiRestClient:
 
         return results
 
-    def get_series(self, series_ticker: str):
+    def get_series(self, series_ticker: str) -> Series:
         """
         Retrieves details for a given series by its ticker.
 
@@ -104,11 +104,17 @@ class KalshiRestClient:
             series_ticker (str): The series ticker to fetch details for.
 
         Returns:
-            Response: The HTTP response object containing the series details.
+            Series: A Series instance.
         """
         path = f"/trade-api/v2/series/{series_ticker}"
 
-        return requests.get(self.state.rest_base_url + path)
+        response = requests.get(self.state.rest_base_url + path)
+        response.raise_for_status()
+
+        series_data = response.json().get("series", {})
+        logger.debug(series_data)
+
+        return Series.from_dict(series_data)
 
     def get_events(
         self,

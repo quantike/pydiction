@@ -1,12 +1,42 @@
 from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 
 @dataclass
+class SettlementSource:
+    name: str
+    url: str
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> 'SettlementSource':
+        return cls(
+            name=data['name'],
+            url=data['url']
+        )
+
+@dataclass
 class Series:
-    pass
+    category: str
+    contract_url: str
+    frequency: str
+    settlement_sources: List[SettlementSource]
+    tags: List[str]
+    ticker: str
+    title: str
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> 'Series':
+        return cls(
+            category=data['category'],
+            contract_url=data['contract_url'],
+            frequency=data['frequency'],
+            settlement_sources=[SettlementSource.from_dict(source) for source in data['settlement_sources']],
+            tags=data['tags'],
+            ticker=data['ticker'],
+            title=data['title']
+        )
 
 
 @dataclass
