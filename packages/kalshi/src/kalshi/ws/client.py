@@ -1,16 +1,15 @@
+import asyncio
 import json
 import time
-from loguru import logger
-import websockets
-import asyncio
-
 from typing import Dict, List, Set
 
-from kalshi.ws.subscription import Subscription
-from kalshi.ws.handler import KalshiMessageHandler
-from kalshi.ws.factory import websocket_factory
-from kalshi.authentication import Authenticator
+import websockets
 from common.state import State
+from kalshi.authentication import Authenticator
+from kalshi.ws.factory import websocket_factory
+from kalshi.ws.handler import KalshiMessageHandler
+from kalshi.ws.subscription import Subscription
+from loguru import logger
 
 
 class KalshiWsClient:

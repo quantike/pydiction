@@ -1,8 +1,11 @@
 from typing import Any, Dict, List, Optional
-import requests
+from loguru import logger
 
+import requests
 from common.state import State
+
 from kalshi.authentication import Authenticator
+from kalshi.models.rest.market import Event, Market, Series, Trade
 from kalshi.models.rest.portfolio import (
     EventPosition,
     Fill,
@@ -93,7 +96,7 @@ class KalshiRestClient:
 
         return results
 
-    def get_series(self, series_ticker: str):
+    def get_series(self, series_ticker: str) -> Series:
         """
         Retrieves details for a given series by its ticker.
 
@@ -101,11 +104,17 @@ class KalshiRestClient:
             series_ticker (str): The series ticker to fetch details for.
 
         Returns:
-            Response: The HTTP response object containing the series details.
+            Series: A Series instance.
         """
         path = f"/trade-api/v2/series/{series_ticker}"
 
-        return requests.get(self.state.rest_base_url + path)
+        response = requests.get(self.state.rest_base_url + path)
+        response.raise_for_status()
+
+        series_data = response.json().get("series", {})
+        logger.debug(series_data)
+
+        return Series.from_dict(series_data)
 
     def get_events(
         self,
@@ -113,7 +122,7 @@ class KalshiRestClient:
         status: Optional[str] = None,
         with_nested_markets: bool = False,
         fetch_all: bool = False,
-    ):
+    ) -> List[Event]:
         """
         Retrieves a list of events, optionally filtered by parameters.
 
@@ -124,12 +133,16 @@ class KalshiRestClient:
             fetch_all (bool): Whether to fetch all pages of results.
 
         Returns:
-            List[Dict[str, Any]]: A list of event dictionaries if fetch_all is True.
-            Otherwise, returns a list of markets.
+            List[Event]: A list of Event instances.
         """
-        path = "/trade-api/v2/events"
+        if not self.is_connected:
+            raise Exception("User not logged in")
 
-        # HACK: Optional construction of params from function arguments
+        method = "GET"
+        path = "/trade-api/v2/events"
+        headers = self.auth.create_headers(method, path)
+
+        # Optional construction of params from function arguments
         params = {
             k: v
             for k, v in {
@@ -141,16 +154,21 @@ class KalshiRestClient:
         }
 
         if fetch_all:
-            return self._deep_fetch_(path, params=params, key="events")
+            events_data = self._deep_fetch_(
+                path, params=params, headers=headers, key="events"
+            )
+        else:
+            # Single fetch if fetch_all is False
+            response = requests.get(
+                self.state.rest_base_url + path, params=params, headers=headers
+            )
+            response.raise_for_status()
+            events_data = response.json().get("events", [])
 
-        # Single fetch if fetch_all is false
-        response = requests.get(self.state.rest_base_url + path, params=params)
-        response.raise_for_status()
-        data = response.json()
+        events = [Event.from_dict(event_data) for event_data in events_data]
+        return events
 
-        return data.get("markets", [])
-
-    def get_event(self, event_ticker: str):
+    def get_event(self, event_ticker: str) -> Event:
         """
         Retrieves details for a given event by its ticker.
 
@@ -158,11 +176,18 @@ class KalshiRestClient:
             event_ticker (str): The event ticker to fetch details for.
 
         Returns:
-            Response: The HTTP response object containing the event details.
+            Event: An Event instance.
         """
         path = f"/trade-api/v2/events/{event_ticker}"
+        params = {"with_nested_markets": False}
 
-        return requests.get(self.state.rest_base_url + path)
+        response = requests.get(self.state.rest_base_url + path, params=params)
+        response.raise_for_status()
+
+        event_data = response.json().get("event", {})
+        logger.debug(event_data)
+
+        return Event.from_dict(event_data)
 
     def get_markets(
         self,
@@ -171,7 +196,7 @@ class KalshiRestClient:
         status: Optional[str] = None,
         tickers: Optional[str] = None,
         fetch_all: bool = False,
-    ):
+    ) -> List[Market]:
         """
         Retrieves a list of markets, optionally filtered by parameters.
 
@@ -183,14 +208,16 @@ class KalshiRestClient:
             fetch_all (bool): Whether to fetch all pages of results.
 
         Returns:
-            List[Dict[str, Any]]: A list of market dictionaries if fetch_all is True.
-            Otherwise, returns a list of markets.
+            List[Market]: A list of Market instances.
         """
+        if not self.is_connected:
+            raise Exception("User not logged in")
+
         method = "GET"
         path = "/trade-api/v2/markets"
         headers = self.auth.create_headers(method, path)
 
-        # HACK: Optional construction of params from function arguments
+        # Optional construction of params from function arguments
         params = {
             k: v
             for k, v in {
@@ -203,20 +230,21 @@ class KalshiRestClient:
         }
 
         if fetch_all:
-            return self._deep_fetch_(
+            markets_data = self._deep_fetch_(
                 path, params=params, headers=headers, key="markets"
             )
+        else:
+            # Single fetch if fetch_all is False
+            response = requests.get(
+                self.state.rest_base_url + path, params=params, headers=headers
+            )
+            response.raise_for_status()
+            markets_data = response.json().get("markets", [])
 
-        # Single fetch if fetch_all is false
-        response = requests.get(
-            self.state.rest_base_url + path, params=params, headers=headers
-        )
-        response.raise_for_status()
-        data = response.json()
+        markets = [Market.from_dict(market_data) for market_data in markets_data]
+        return markets
 
-        return data.get("markets", [])
-
-    def get_market(self, market_ticker: str):
+    def get_market(self, market_ticker: str) -> Market:
         """
         Retrieves details for a given market by its ticker.
 
@@ -224,16 +252,21 @@ class KalshiRestClient:
             market_ticker (str): The market ticker to fetch details for.
 
         Returns:
-            Response: The HTTP response object containing the market details.
+            Market: A Market instance.
         """
         method = "GET"
         path = f"/trade-api/v2/markets/{market_ticker}"
 
         headers = self.auth.create_headers(method, path)
+        response = requests.get(self.state.rest_base_url + path, headers=headers)
+        response.raise_for_status()
 
-        return requests.get(self.state.rest_base_url + path, headers=headers)
+        market_data = response.json().get("market", {})
+        logger.debug(market_data)
 
-    def get_market_trades(self, ticker: str, fetch_all: bool = False):
+        return Market.from_dict(market_data)
+
+    def get_trades(self, ticker: str, fetch_all: bool = False) -> List[Trade]:
         """
         Retrieves a list of trades for a given market ticker.
 
@@ -242,21 +275,38 @@ class KalshiRestClient:
             fetch_all (bool): Whether to fetch all pages of results.
 
         Returns:
-            List[Dict[str, Any]]: A list of trade dictionaries.
+            List[Trade]: A list of Trade instances.
         """
-        # Wrapper around _deep_fetch_ for getting market trades
-        path = "/trade-api/v2/markets/trades"
-        params = {"ticker": ticker}
+        if not self.is_connected:
+            raise Exception("User not logged in")
+
+        method = "GET"
+        path = "/trade-api/v2/trades"
+        headers = self.auth.create_headers(method, path)
+
+        # Optional construction of params from function arguments
+        params = {
+            k: v
+            for k, v in {
+                "ticker": ticker,
+            }.items()
+            if v is not None
+        }
 
         if fetch_all:
-            return self._deep_fetch_(path, params=params, key="trades")
+            trades_data = self._deep_fetch_(
+                path, params=params, headers=headers, key="trades"
+            )
+        else:
+            # Single fetch if fetch_all is False
+            response = requests.get(
+                self.state.rest_base_url + path, params=params, headers=headers
+            )
+            response.raise_for_status()
+            trades_data = response.json().get("trades", [])
 
-        # Single fetch if fetch_all is False
-        response = requests.get(self.state.rest_base_url + path, params=params)
-        response.raise_for_status()
-        data = response.json()
-
-        return data.get("trades", [])
+        trades = [Trade.from_dict(trade_data) for trade_data in trades_data]
+        return trades
 
     def get_exchange_schedule(self) -> Dict[str, Any]:
         """
@@ -296,15 +346,12 @@ class KalshiRestClient:
         response.raise_for_status()
         return response.json()
 
-    def get_portfolio_balance(self):
+    def get_portfolio_balance(self) -> PortfolioBalance:
         """
         Requests the portfolio balance for a logged-in user.
 
         Returns:
-            Response: The HTTP response object containing the portfolio balance details.
-
-        Raises:
-            Exception: If the user is not logged in.
+            PortfolioBalance: A PortfolioBalance instance.
         """
         if not self.is_connected:
             raise Exception("User not logged in")
@@ -327,7 +374,7 @@ class KalshiRestClient:
         ticker: Optional[str] = None,
         order_id: Optional[str] = None,
         fetch_all: bool = False,
-    ):
+    ) -> List[Fill]:
         """
         Retrieves a list of fills for a given portfolio ticker.
 
@@ -337,10 +384,7 @@ class KalshiRestClient:
             fetch_all (bool): Whether to fetch all pages of results.
 
         Returns:
-            List[Dict[str, Any]]: A list of fill dictionaries.
-
-        Raises:
-            Exception: If the user is not logged in.
+            List[Fill]: A list of Fill instances.
         """
         if not self.is_connected:
             raise Exception("User not logged in")
@@ -377,6 +421,16 @@ class KalshiRestClient:
     def get_event_positions(
         self, event_ticker: Optional[str] = None, fetch_all: bool = False
     ) -> List[EventPosition]:
+        """
+        Retrieves a list of EventPositions for a given even ticker.
+
+        Args:
+            event_ticker (Optional[str]): The event ticker to fetch EventPositions.
+            fetch_all (bool): Whether to fetch all pages of results.
+
+        Returns:
+            List[EventPosition]: A list of EventPosition instances.
+        """
         if not self.is_connected:
             raise Exception("User not logged in")
 
@@ -414,10 +468,24 @@ class KalshiRestClient:
     def get_market_positions(
         self,
         ticker: Optional[str] = None,
+        event_ticker: Optional[str] = None,
         count_filter: Optional[str] = None,
         settlement_status: Optional[str] = None,
         fetch_all: bool = False,
     ) -> List[MarketPosition]:
+        """
+        Retrieves a list of MarketPositions for a given event ticker.
+
+        Args:
+            ticker (Optional[str]): The ticker for the MarketPosition.
+            event_ticker (Optional[str]): The event ticker to fetch MarketPositions.
+            count_filter (Optional[str]): Restricts the positions to those with any of following fields with non-zero values, as a comma separated list. The following values are accepted: position, total_traded, resting_order_count.
+            settlement_status (Optional[str]): Settlement status of the markets to return. Defaults to unsettled. The following values are accepted: all, settled, unsettled.
+            fetch_all (bool): Whether to fetch all pages of results.
+
+        Returns:
+            List[MarketPosition]: A list of MarketPosition instances.
+        """
         if not self.is_connected:
             raise Exception("User not logged in")
 
@@ -430,6 +498,7 @@ class KalshiRestClient:
             k: v
             for k, v in {
                 "ticker": ticker,
+                "event_ticker": event_ticker,
                 "count_filter": count_filter,
                 "settlement_status": settlement_status,
             }.items()
@@ -461,6 +530,18 @@ class KalshiRestClient:
         status: Optional[OrderStatus] = None,
         fetch_all: bool = False,
     ) -> List[Order]:
+        """
+        Retrieves a list of Orders for a given ticker.
+
+        Args:
+            ticker (Optional[str]): The ticker for the Order.
+            event_ticker (Optional[str]): The event ticker to fetch Orders.
+            status (Optional[OrderStatus]): Restricts the response to orders that have a certain status: resting, canceled, or executed.
+            fetch_all (bool): Whether to fetch all pages of results.
+
+        Returns:
+            List[Order]: A list of Order instances.
+        """
         if not self.is_connected:
             raise Exception("User not logged in")
 
@@ -495,9 +576,25 @@ class KalshiRestClient:
         orders = [Order.from_dict(order_data) for order_data in orders_data]
         return orders
 
+    def get_order(self, order_id: str) -> Order:
+        """
+        Fetches a single Order with an order_id.
 
-if __name__ == "__main__":
-    state = State()
-    api = KalshiRestClient(state)
+        Args:
+            order_id (str): Order ID input for the desired order. Should look like a UUIDv4 str.
 
-    print(api.get_portfolio_balance())
+        Returns:
+            Order: The requested Order instance.
+        """
+        if not self.is_connected:
+            raise Exception("User not logged in")
+
+        method = "GET"
+        path = f"/trade-api/v2/portfolio/orders/{order_id}"
+        headers = self.auth.create_headers(method, path)
+
+        response = requests.get(self.state.rest_base_url + path, headers=headers)
+        response.raise_for_status()
+        order_data = response.json().get("order", {})
+
+        return Order.from_dict(order_data)

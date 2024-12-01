@@ -1,7 +1,7 @@
-from loguru import logger
 from typing import Any, Dict
 
 from common.models.trade import Trade
+from loguru import logger
 
 
 class KalshiTradeHandler:

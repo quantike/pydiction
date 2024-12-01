@@ -1,7 +1,6 @@
-import sqlite3
 import logging
+import sqlite3
 from typing import List, Tuple
-
 
 # Configure basic logging
 logging.basicConfig(

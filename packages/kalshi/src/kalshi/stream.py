@@ -1,4 +1,5 @@
 from common.state import State
+
 from kalshi.authentication import Authenticator
 from kalshi.rest import KalshiRestClient
 from kalshi.ws.client import KalshiWsClient

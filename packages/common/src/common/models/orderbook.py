@@ -1,7 +1,7 @@
 from typing import Dict, List, Optional, Tuple
 
-from common.models.level import Level
 from common.models.delta import Delta
+from common.models.level import Level
 
 
 class Orderbook:

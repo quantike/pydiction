@@ -1,8 +1,8 @@
 import asyncio
-
 from typing import Dict
-from loguru import logger
+
 from kalshi.rest import KalshiRestClient
+from loguru import logger
 
 
 class KalshiStatus:

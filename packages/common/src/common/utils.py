@@ -1,6 +1,7 @@
 from pathlib import Path
-import yaml
 from typing import Dict
+
+import yaml
 
 
 def load_from_yaml(filename: Path) -> Dict:
