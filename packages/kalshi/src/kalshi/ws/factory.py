@@ -1,6 +1,7 @@
-from loguru import logger
-import websockets
 from typing import Dict, Optional
+
+import websockets
+from loguru import logger
 
 
 async def websocket_factory(uri: str, extra_headers: Optional[Dict[str, str]]):

@@ -1,5 +1,5 @@
-import sys
 import asyncio
+import sys
 from typing import Optional
 
 from loguru import logger

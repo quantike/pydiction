@@ -1,12 +1,11 @@
 import asyncio
 
-from kalshi.models.status import KalshiStatus
-from loguru import logger
-
+from common.clog import CentralizedLogger
 from common.state import State
+from kalshi.models.status import KalshiStatus
 from kalshi.rest import KalshiRestClient
 from kalshi.ws.client import KalshiWsClient
-from common.clog import CentralizedLogger
+from loguru import logger
 
 
 async def main():

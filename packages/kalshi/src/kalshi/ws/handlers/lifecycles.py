@@ -1,7 +1,7 @@
-from loguru import logger
 from typing import Any, Dict
 
 from kalshi.models.lifecycle import Lifecycle
+from loguru import logger
 
 
 class KalshiLifecycleHandler:
