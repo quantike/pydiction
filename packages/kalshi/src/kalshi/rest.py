@@ -5,7 +5,7 @@ import requests
 from common.state import State
 
 from kalshi.authentication import Authenticator
-from kalshi.models.rest.market import Market
+from kalshi.models.rest.market import Event, Market, Trade
 from kalshi.models.rest.portfolio import (
     EventPosition,
     Fill,
@@ -164,8 +164,15 @@ class KalshiRestClient:
             Response: The HTTP response object containing the event details.
         """
         path = f"/trade-api/v2/events/{event_ticker}"
+        params = {"with_nested_markets": False}
 
-        return requests.get(self.state.rest_base_url + path)
+        response = requests.get(self.state.rest_base_url + path, params=params)
+        response.raise_for_status()
+
+        event_data = response.json().get("event", {})
+        logger.debug(event_data)
+
+        return Event.from_dict(event_data)
 
     def get_markets(
         self,
@@ -174,7 +181,7 @@ class KalshiRestClient:
         status: Optional[str] = None,
         tickers: Optional[str] = None,
         fetch_all: bool = False,
-    ):
+    ) -> List[Market]:
         """
         Retrieves a list of markets, optionally filtered by parameters.
 
@@ -186,8 +193,7 @@ class KalshiRestClient:
             fetch_all (bool): Whether to fetch all pages of results.
 
         Returns:
-            List[Dict[str, Any]]: A list of market dictionaries if fetch_all is True.
-            Otherwise, returns a list of markets.
+            List[Market]: A list of Market instances.
         """
         if not self.is_connected:
             raise Exception("User not logged in")
@@ -223,7 +229,7 @@ class KalshiRestClient:
         markets = [Market.from_dict(market_data) for market_data in markets_data]
         return markets
 
-    def get_market(self, market_ticker: str):
+    def get_market(self, market_ticker: str) -> Market:
         """
         Retrieves details for a given market by its ticker.
 
@@ -246,7 +252,7 @@ class KalshiRestClient:
         return Market.from_dict(market_data)
 
 
-    def get_market_trades(self, ticker: str, fetch_all: bool = False):
+    def get_trades(self, ticker: str, fetch_all: bool = False) -> List[Trade]:
         """
         Retrieves a list of trades for a given market ticker.
 
@@ -257,19 +263,36 @@ class KalshiRestClient:
         Returns:
             List[Dict[str, Any]]: A list of trade dictionaries.
         """
-        # Wrapper around _deep_fetch_ for getting market trades
-        path = "/trade-api/v2/markets/trades"
-        params = {"ticker": ticker}
+        if not self.is_connected:
+            raise Exception("User not logged in")
+
+        method = "GET"
+        path = "/trade-api/v2/trades"
+        headers = self.auth.create_headers(method, path)
+
+        # Optional construction of params from function arguments
+        params = {
+            k: v
+            for k, v in {
+                "ticker": ticker,
+            }.items()
+            if v is not None
+        }
 
         if fetch_all:
-            return self._deep_fetch_(path, params=params, key="trades")
+            trades_data = self._deep_fetch_(
+                path, params=params, headers=headers, key="trades"
+            )
+        else:
+            # Single fetch if fetch_all is False
+            response = requests.get(
+                self.state.rest_base_url + path, params=params, headers=headers
+            )
+            response.raise_for_status()
+            trades_data = response.json().get("trades", [])
 
-        # Single fetch if fetch_all is False
-        response = requests.get(self.state.rest_base_url + path, params=params)
-        response.raise_for_status()
-        data = response.json()
-
-        return data.get("trades", [])
+        trades = [Trade.from_dict(trade_data) for trade_data in trades_data]
+        return trades
 
     def get_exchange_schedule(self) -> Dict[str, Any]:
         """
@@ -568,4 +591,4 @@ if __name__ == "__main__":
     state = State()
     api = KalshiRestClient(state)
 
-    print(api.get_markets(event_ticker="BTCMAX100-24"))
+    print(api.get_event(event_ticker="BTCMAX100-24"))

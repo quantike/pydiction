@@ -11,7 +11,27 @@ class Series:
 
 @dataclass
 class Event:
-    pass
+    event_ticker: str
+    series_ticker: str 
+    category: str
+    mutually_exclusive: bool
+    sub_title: str
+    title: str
+    strike_date: Optional[datetime] = None
+    strike_period: Optional[str] = None
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> 'Event':
+        return cls(
+            event_ticker=data['event_ticker'],
+            series_ticker=data['series_ticker'],
+            category=data['category'],
+            mutually_exclusive=data['mutually_exclusive'],
+            title=data['title'],
+            sub_title=data['sub_title'],
+            strike_date=datetime.fromisoformat(data['strike_date']) if 'strike_date' in data else None,
+            strike_period=data['strike_period'] if 'strike_period' in data else None
+        )
 
 class MarketType(Enum):
     BINARY = "binary"
@@ -131,7 +151,28 @@ class Market:
             settlement_value=data.get('settlement_value')
         )
 
+class TradeSide(Enum):
+    YES = "yes"
+    NO = "no"
 
 @dataclass
 class Trade:
-    pass
+    created_time: datetime
+    ticker: str
+    yes_price: int
+    no_price: int
+    count: int
+    taker_side: TradeSide
+    trade_id: str
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> 'Trade':
+        return cls(
+            created_time=data['created_time'],
+            ticker=data['ticker'],
+            yes_price=data['yes_price'],
+            no_price=data['no_price'],
+            count=data['count'],
+            taker_side=TradeSide(data['taker_side']),
+            trade_id=data['trade_id']
+        )
