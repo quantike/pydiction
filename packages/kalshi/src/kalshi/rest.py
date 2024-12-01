@@ -1,9 +1,11 @@
 from typing import Any, Dict, List, Optional
+from loguru import logger
 
 import requests
 from common.state import State
 
 from kalshi.authentication import Authenticator
+from kalshi.models.rest.market import Market
 from kalshi.models.rest.portfolio import (
     EventPosition,
     Fill,
@@ -187,11 +189,14 @@ class KalshiRestClient:
             List[Dict[str, Any]]: A list of market dictionaries if fetch_all is True.
             Otherwise, returns a list of markets.
         """
+        if not self.is_connected:
+            raise Exception("User not logged in")
+
         method = "GET"
         path = "/trade-api/v2/markets"
         headers = self.auth.create_headers(method, path)
 
-        # HACK: Optional construction of params from function arguments
+        # Optional construction of params from function arguments
         params = {
             k: v
             for k, v in {
@@ -204,18 +209,19 @@ class KalshiRestClient:
         }
 
         if fetch_all:
-            return self._deep_fetch_(
+            markets_data = self._deep_fetch_(
                 path, params=params, headers=headers, key="markets"
             )
+        else:
+            # Single fetch if fetch_all is False
+            response = requests.get(
+                self.state.rest_base_url + path, params=params, headers=headers
+            )
+            response.raise_for_status()
+            markets_data = response.json().get("markets", [])
 
-        # Single fetch if fetch_all is false
-        response = requests.get(
-            self.state.rest_base_url + path, params=params, headers=headers
-        )
-        response.raise_for_status()
-        data = response.json()
-
-        return data.get("markets", [])
+        markets = [Market.from_dict(market_data) for market_data in markets_data]
+        return markets
 
     def get_market(self, market_ticker: str):
         """
@@ -231,8 +237,14 @@ class KalshiRestClient:
         path = f"/trade-api/v2/markets/{market_ticker}"
 
         headers = self.auth.create_headers(method, path)
+        response = requests.get(self.state.rest_base_url + path, headers=headers)
+        response.raise_for_status()
 
-        return requests.get(self.state.rest_base_url + path, headers=headers)
+        market_data = response.json().get("market", {})
+        logger.debug(market_data)
+
+        return Market.from_dict(market_data)
+
 
     def get_market_trades(self, ticker: str, fetch_all: bool = False):
         """
@@ -556,4 +568,4 @@ if __name__ == "__main__":
     state = State()
     api = KalshiRestClient(state)
 
-    print(api.get_order(order_id="8b0a08cf-4ecb-4171-ac38-9f0e56e6e441"))
+    print(api.get_markets(event_ticker="BTCMAX100-24"))
