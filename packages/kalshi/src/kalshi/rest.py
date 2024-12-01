@@ -116,7 +116,7 @@ class KalshiRestClient:
         status: Optional[str] = None,
         with_nested_markets: bool = False,
         fetch_all: bool = False,
-    ):
+    ) -> List[Event]:
         """
         Retrieves a list of events, optionally filtered by parameters.
 
@@ -127,12 +127,16 @@ class KalshiRestClient:
             fetch_all (bool): Whether to fetch all pages of results.
 
         Returns:
-            List[Dict[str, Any]]: A list of event dictionaries if fetch_all is True.
-            Otherwise, returns a list of markets.
+            List[Event]: A list of Event instances.
         """
-        path = "/trade-api/v2/events"
+        if not self.is_connected:
+            raise Exception("User not logged in")
 
-        # HACK: Optional construction of params from function arguments
+        method = "GET"
+        path = "/trade-api/v2/events"
+        headers = self.auth.create_headers(method, path)
+
+        # Optional construction of params from function arguments
         params = {
             k: v
             for k, v in {
@@ -144,16 +148,21 @@ class KalshiRestClient:
         }
 
         if fetch_all:
-            return self._deep_fetch_(path, params=params, key="events")
+            events_data = self._deep_fetch_(
+                path, params=params, headers=headers, key="events"
+            )
+        else:
+            # Single fetch if fetch_all is False
+            response = requests.get(
+                self.state.rest_base_url + path, params=params, headers=headers
+            )
+            response.raise_for_status()
+            events_data = response.json().get("events", [])
 
-        # Single fetch if fetch_all is false
-        response = requests.get(self.state.rest_base_url + path, params=params)
-        response.raise_for_status()
-        data = response.json()
+        events = [Event.from_dict(event_data) for event_data in events_data]
+        return events
 
-        return data.get("markets", [])
-
-    def get_event(self, event_ticker: str):
+    def get_event(self, event_ticker: str) -> Event:
         """
         Retrieves details for a given event by its ticker.
 
@@ -161,7 +170,7 @@ class KalshiRestClient:
             event_ticker (str): The event ticker to fetch details for.
 
         Returns:
-            Response: The HTTP response object containing the event details.
+            Event: An Event instance.
         """
         path = f"/trade-api/v2/events/{event_ticker}"
         params = {"with_nested_markets": False}
@@ -237,7 +246,7 @@ class KalshiRestClient:
             market_ticker (str): The market ticker to fetch details for.
 
         Returns:
-            Response: The HTTP response object containing the market details.
+            Market: A Market instance.
         """
         method = "GET"
         path = f"/trade-api/v2/markets/{market_ticker}"
@@ -261,7 +270,7 @@ class KalshiRestClient:
             fetch_all (bool): Whether to fetch all pages of results.
 
         Returns:
-            List[Dict[str, Any]]: A list of trade dictionaries.
+            List[Trade]: A list of Trade instances.
         """
         if not self.is_connected:
             raise Exception("User not logged in")
