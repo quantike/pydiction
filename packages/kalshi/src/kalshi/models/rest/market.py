@@ -105,7 +105,6 @@ class Market:
     event_ticker: str
     expiration_time: datetime
     expiration_value: str
-    floor_strike: float
     last_price: int
     latest_expiration_time: datetime
     liquidity: int
@@ -136,6 +135,7 @@ class Market:
     yes_ask: int
     yes_bid: int
     yes_sub_title: str
+    floor_strike: float | int | None = None
     custom_strike: Optional[Dict[str, Any]] = None
     functional_strike: Optional[str] = None
     expected_expiration_time: Optional[datetime] = None
@@ -151,7 +151,7 @@ class Market:
             event_ticker=data["event_ticker"],
             expiration_time=datetime.fromisoformat(data["expiration_time"]),
             expiration_value=data["expiration_value"],
-            floor_strike=data["floor_strike"],
+            floor_strike=data["floor_strike"] if "floor_strike" in data else None,
             last_price=data["last_price"],
             latest_expiration_time=datetime.fromisoformat(
                 data["latest_expiration_time"]
