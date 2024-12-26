@@ -1,4 +1,5 @@
 import asyncio
+from collections import deque
 import json
 import time
 from typing import Dict, List, Set
@@ -22,6 +23,10 @@ class KalshiWsClient:
 
         # Set up message handler for message dispatch
         self.handler = KalshiMessageHandler()
+
+        # Set up dequeue for monitoring connection latencies
+        # We store the last 10 measurements for statistics
+        self.ping_latencies = deque(maxlen=10)
 
     async def connect(self):
         headers = self.auth.get_auth_headers_ws()
@@ -238,8 +243,22 @@ class KalshiWsClient:
         while True:
             await asyncio.sleep(10.0)  # waits 10 seconds then checks
             try:
+                start_time = time.time()
                 pong = await self.websocket.ping()
                 await pong
+                end_time = time.time()
+                latency = end_time - start_time
+                self.ping_latencies.append(latency)
+                logger.info(f"Connection ping latency: {latency}s")
+
+                # Statistics
+                if len(self.ping_latencies) == 10:
+                    # TODO: move to internal function
+                    self.avg_latency = sum(self.ping_latencies) / len(self.ping_latencies)
+                    self.min_latency = min(self.ping_latencies)
+                    self.max_latency = max(self.ping_latencies)
+                    logger.info(f"Connection stats (last 10 pings): Avg={self.avg_latency}, Min={self.min_latency}, Max={self.max_latency}")
+
             except Exception:
                 logger.error("Connection health deteriorated, reconnecting...")
                 await self._reconnect_()
