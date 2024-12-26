@@ -27,3 +27,6 @@ data/*
 
 # don't commit scratch files
 scratch.*
+
+# don't commit logs 
+*.log
