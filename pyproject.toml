@@ -12,7 +12,7 @@ kalshi = { workspace = true }
 streams = { workspace = true }
 
 [tool.uv.workspace]
-members = ["packages/kalshi", "packages/common", "packages/streams"]
+members = ["packages/*"]
 exclude = ["packages/maker", "packages/pipeline"]
 
 [dependency-groups]
