@@ -11,7 +11,7 @@ from loguru import logger
 async def main():
     state = None
     kalshi_status_checker: KalshiStatus | None = None
-    CentralizedLogger()
+    CentralizedLogger(log_file="pydiction.log")
 
     try:
         state = State()
