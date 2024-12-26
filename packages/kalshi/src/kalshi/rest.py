@@ -30,21 +30,23 @@ class KalshiRestClient:
 
     def _connect_(self) -> bool:
         """
-        Connects to the Kalshi REST API using authentication credentials.
+        Connects to the Kalshi by checking that we can create valid headers and successfully request a private endpoint.
 
         Returns:
-            bool: True if the login attempt is successful, False otherwise.
+            bool: True if we can create headers.
         """
-        # Retrieve the response body from a login attempt
-        login_response: Dict[str, str] = self.auth.get_auth_headers_rest(
-            self.state.rest_base_url
-        )
+        # HACK! Yeah just temporarily set `is_connected` to True so we can send the request.
+        self.is_connected = True
 
-        # If the "token" response object exists, return True
-        if login_response.get("token"):
+        # Get portfolio balance and ensure it doesn't error
+        balance = self.get_portfolio_balance()
+
+        # HACK! Reset.
+        self.is_connected = False
+
+        if isinstance(balance, PortfolioBalance):
             return True
 
-        # Else, login failed
         return False
 
     def _deep_fetch_(
