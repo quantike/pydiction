@@ -600,10 +600,3 @@ class KalshiRestClient:
         order_data = response.json().get("order", {})
 
         return Order.from_dict(order_data)
-
-
-if __name__ == '__main__':
-    state = State()
-    api = KalshiRestClient(state)
-
-    api.get_markets(series_ticker='KXBTC')
