@@ -6,8 +6,8 @@ from typing import Dict, List, Set
 import websockets
 from common.state import State
 from kalshi.authentication import Authenticator
-from kalshi.ws.pool import WsPool
 from kalshi.ws.handler import KalshiMessageHandler
+from kalshi.ws.pool import WsPool
 from kalshi.ws.subscription import Subscription
 from loguru import logger
 

@@ -1,14 +1,14 @@
 import asyncio
-from collections import deque, defaultdict
+import random
 import time
+from collections import defaultdict, deque
 from typing import Dict
-from common.state import State
-from loguru import logger
-from websockets import WebSocketClientProtocol
 
+from common.state import State
 from kalshi.authentication import Authenticator
 from kalshi.ws.factory import websocket_factory
-import random
+from loguru import logger
+from websockets import WebSocketClientProtocol
 
 
 class WsPool:

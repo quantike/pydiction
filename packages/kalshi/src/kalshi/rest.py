@@ -1,8 +1,8 @@
 from typing import Any, Dict, List, Optional
-from loguru import logger
 
 import requests
 from common.state import State
+from loguru import logger
 
 from kalshi.authentication import Authenticator
 from kalshi.models.rest.market import Event, Market, Series, Trade
