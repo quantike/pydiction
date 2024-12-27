@@ -42,7 +42,7 @@ class KalshiOrderbookHandler:
                 case "orderbook_snapshot":
                     # Sometimes, a snapshot can be empty. This will represent itself as having no "no" and no "yes"
                     # fields. This means there are no active orders and we need to handle this situation.
-                    if "yes" not in data and "no" not in data: 
+                    if "yes" not in data and "no" not in data:
                         bids = []
                         asks = []
 

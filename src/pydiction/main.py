@@ -7,6 +7,7 @@ from kalshi.rest import KalshiRestClient
 from kalshi.ws.client import KalshiWsClient
 from loguru import logger
 
+
 async def main():
     state = None
     kalshi_status_checker: KalshiStatus | None = None
@@ -42,6 +43,7 @@ async def main():
         if websocket:
             await websocket.end()
         logger.success("pydiction successfully shutdown")
+
 
 if __name__ == "__main__":
     asyncio.run(main())

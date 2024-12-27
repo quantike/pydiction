@@ -48,7 +48,9 @@ class KalshiWsClient:
     async def _disconnect_(self):
         if self.websocket:
             await self.websocket.close()
-            logger.critical(f"Websocket connection disconnected from {self.websocket.remote_address}")
+            logger.critical(
+                f"Websocket connection disconnected from {self.websocket.remote_address}"
+            )
             self.websocket = None
 
     async def _reconnect_(self):
@@ -247,7 +249,7 @@ class KalshiWsClient:
                         "market_tickers": subscription.tickers,
                     },
                 }
-    
+
                 assert self.websocket is not None
                 await self.websocket.send(json.dumps(resubscription_message))
 
