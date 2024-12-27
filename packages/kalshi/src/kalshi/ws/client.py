@@ -1,5 +1,4 @@
 import asyncio
-from collections import deque
 import json
 import time
 from typing import Dict, List, Set
@@ -7,7 +6,7 @@ from typing import Dict, List, Set
 import websockets
 from common.state import State
 from kalshi.authentication import Authenticator
-from kalshi.ws.factory import websocket_factory
+from kalshi.ws.pool import WsPool
 from kalshi.ws.handler import KalshiMessageHandler
 from kalshi.ws.subscription import Subscription
 from loguru import logger
@@ -24,27 +23,43 @@ class KalshiWsClient:
         # Set up message handler for message dispatch
         self.handler = KalshiMessageHandler()
 
-        # Set up dequeue for monitoring connection latencies
-        # We store the last 10 measurements for statistics
-        self.ping_latencies = deque(maxlen=10)
-
-    async def connect(self):
-        headers = self.auth.get_auth_headers_ws()
-        self.websocket: websockets.WebSocketClientProtocol = await websocket_factory(
-            self.state.ws_uri, extra_headers=headers
+        # Set up the WebSocket pool for connection cycling and monitoring
+        self.pool: WsPool = WsPool(
+            state=self.state,
+            n_connections=3,
         )
+
+    async def start(self):
+        await self._connect_()
+        assert self.websocket is not None
+        logger.info(f"Starting client to {self.websocket.remote_address}")
+
+    async def end(self):
+        await self._disconnect_()
+        logger.critical("Ending client")
+
+    async def _connect_(self):
+        await self.pool.run()
+        self.websocket = self.pool.connection
 
         # Start listening for messages from the server
         asyncio.create_task(self.listen())
 
+    async def _disconnect_(self):
+        if self.websocket:
+            await self.websocket.close()
+            logger.critical(f"Websocket connection disconnected from {self.websocket.remote_address}")
+            self.websocket = None
+
     async def _reconnect_(self):
         """Close the connection and attempt to re-connect periodically."""
+        assert self.websocket is not None
         await self.websocket.close()
         logger.info("attempting reconnect...")
 
         while True:
             try:
-                await self.connect()
+                await self._connect_()
                 logger.success("Reconnection successful")
                 await self.resubscribe_all()
                 break
@@ -80,6 +95,7 @@ class KalshiWsClient:
             # If we are not in all_markets mode, update subscription_message with tickers from state
             subscription_message["params"]["market_tickers"] = self.state.tickers
 
+        assert self.websocket is not None
         await self.websocket.send(json.dumps(subscription_message))
 
         # Update the subscription locally
@@ -139,6 +155,7 @@ class KalshiWsClient:
             }
 
             # TODO: Actually send the add_message to the ws and handle success/failure
+            assert self.websocket is not None
             await self.websocket.send(json.dumps(add_message))
 
             actions_performed.append("add_markets")
@@ -158,6 +175,7 @@ class KalshiWsClient:
             }
 
             # TODO: Actually send the delete_message to the ws and handle success/failure
+            assert self.websocket is not None
             await self.websocket.send(json.dumps(delete_message))
 
             actions_performed.append("delete_markets")
@@ -188,6 +206,7 @@ class KalshiWsClient:
                 "params": {"sids": valid_subscription_ids},
             }
 
+            assert self.websocket is not None
             await self.websocket.send(json.dumps(unsubscribe_message))
 
             # Update subscriptions locally
@@ -228,7 +247,8 @@ class KalshiWsClient:
                         "market_tickers": subscription.tickers,
                     },
                 }
-
+    
+                assert self.websocket is not None
                 await self.websocket.send(json.dumps(resubscription_message))
 
                 # Update subscriptions locally
@@ -238,34 +258,10 @@ class KalshiWsClient:
                     updated_ts=time.time()
                 )
 
-    async def monitor_connection_health(self) -> None:
-        """Monitors the connection's health and reconnects if the health has degraded."""
-        while True:
-            await asyncio.sleep(10.0)  # waits 10 seconds then checks
-            try:
-                start_time = time.time()
-                pong = await self.websocket.ping()
-                await pong
-                end_time = time.time()
-                latency = end_time - start_time
-                self.ping_latencies.append(latency)
-                logger.info(f"Connection ping latency: {latency}s")
-
-                # Statistics
-                if len(self.ping_latencies) == 10:
-                    # TODO: move to internal function
-                    self.avg_latency = sum(self.ping_latencies) / len(self.ping_latencies)
-                    self.min_latency = min(self.ping_latencies)
-                    self.max_latency = max(self.ping_latencies)
-                    logger.info(f"Connection stats (last 10 pings): Avg={self.avg_latency}, Min={self.min_latency}, Max={self.max_latency}")
-
-            except Exception:
-                logger.error("Connection health deteriorated, reconnecting...")
-                await self._reconnect_()
-
     async def listen(self):
         """Listen for incoming messages from the WebSocket server."""
         try:
+            assert self.websocket is not None
             async for message in self.websocket:
                 await self.handle_message(json.loads(message))
         except websockets.ConnectionClosed:
