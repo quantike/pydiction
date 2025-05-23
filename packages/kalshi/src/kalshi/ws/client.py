@@ -26,7 +26,7 @@ class KalshiWsClient:
         # Set up the WebSocket pool for connection cycling and monitoring
         self.pool: WsPool = WsPool(
             state=self.state,
-            n_connections=5,
+            n_connections=3,
         )
 
     async def start(self):

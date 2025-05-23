@@ -24,7 +24,7 @@ async def main():
         websocket = KalshiWsClient(state)
         await websocket.start()
         await websocket.add_subscription(
-            ["ticker", "trade", "orderbook_delta", "market_lifecycle"]
+            ["ticker"]
         )
 
         await asyncio.gather(

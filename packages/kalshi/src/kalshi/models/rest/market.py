@@ -3,6 +3,8 @@ from datetime import datetime
 from enum import Enum
 from typing import Any, Dict, List, Optional
 
+from common.models.trade import Trade
+
 
 @dataclass
 class SettlementSource:
@@ -206,7 +208,7 @@ class TradeSide(Enum):
 
 
 @dataclass
-class Trade:
+class TradeResponse:
     created_time: datetime
     ticker: str
     yes_price: int
@@ -216,13 +218,24 @@ class Trade:
     trade_id: str
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "Trade":
+    def from_dict(cls, data: Dict[str, Any]) -> "TradeResponse":
+        created_time = datetime.fromisoformat(data["created_time"])
+
         return cls(
-            created_time=data["created_time"],
+            created_time=created_time,
             ticker=data["ticker"],
             yes_price=data["yes_price"],
             no_price=data["no_price"],
             count=data["count"],
             taker_side=TradeSide(data["taker_side"]),
             trade_id=data["trade_id"],
+        )
+
+    def to_internal(self) -> Trade:
+        return Trade(
+            ts=int(self.created_time.timestamp()),
+            yes_price=self.yes_price,
+            no_price=self.no_price,
+            count=self.count,
+            side=self.taker_side.value,
         )

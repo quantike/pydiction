@@ -1,7 +1,7 @@
 import asyncio
 import random
 import time
-from collections import defaultdict, deque
+from collections import deque
 from typing import Dict
 
 from common.state import State
@@ -21,7 +21,6 @@ class WsPool:
         self.connection: WebSocketClientProtocol | None = None
         self.connections: Dict[int, WebSocketClientProtocol] = {}
         self.latencies: Dict[int, deque] = {}
-        self.usage_counts: Dict[int, int] = defaultdict(int)
         self.state = state
         self.auth = Authenticator(state=self.state)
         self.n_connections = n_connections
@@ -83,14 +82,7 @@ class WsPool:
                 await asyncio.sleep(self.RECONNECT_DELAY)
 
     async def _ping_connection_(self, connection_id: int):
-        connection = self.connections[connection_id]
-        self.usage_counts[connection_id] += 1  # Track usage count
-        start_time = time.perf_counter()
-        await connection.ping()
-        end_time = time.perf_counter()
-        latency = end_time - start_time
-        self.latencies[connection_id].append(latency)
-        logger.info(f"Connection {connection_id}, Latency={latency:.6f} seconds")
+        await self.connections[connection_id].ping()
 
     async def _measure_all_pings_(self):
         start_times = {
@@ -105,20 +97,28 @@ class WsPool:
         logger.info(f"Simultaneous Ping Latencies: {latencies}")
 
     async def monitor(self):
-        async def ping_task(connection_id: int):
-            await asyncio.sleep(1)  # Allow stabilization before the first ping
+        async def ping_task(connection_id: int, stagger_delay: float):
+            # Introduce a small stagger delay to spread out pings
+            await asyncio.sleep(stagger_delay)
             while True:
                 try:
+                    # Measure latency for the current connection
+                    start_time = time.perf_counter()
                     await self._ping_connection_(connection_id)
+                    latency = time.perf_counter() - start_time
+                    
+                    # Update the latency deque for this connection
+                    self.latencies[connection_id].append(latency)
+                    logger.info(f"Ping latency for connection {connection_id}: {latency} seconds")
                 except Exception as e:
                     logger.error(f"Error pinging connection {connection_id}: {e}")
                     await self._reconnect_connection_(connection_id)
                 await asyncio.sleep(self.PING_INTERVAL)
 
-        # Create a separate task for each connection to ensure independent ping measurements
+        # Create ping tasks for each connection, with staggered start times
         tasks = [
-            asyncio.create_task(ping_task(connection_id))
-            for connection_id in self.connections.keys()
+            asyncio.create_task(ping_task(connection_id, stagger_delay=i * 0.1))
+            for i, connection_id in enumerate(self.connections.keys())
         ]
         await asyncio.gather(*tasks)
 
@@ -141,6 +141,3 @@ class WsPool:
         logger.info(
             f"Selected connection with minimum latency: {min_latency_connection_id}"
         )
-
-        # Log usage counts for analysis
-        logger.info(f"Connection Usage Counts: {dict(self.usage_counts)}")
