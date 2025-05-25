@@ -14,4 +14,6 @@ uv run kelly.py bet
     --bankroll=86.71  # current wealth in dollars
     --kelly=0.5       # for fractional Kelly
     --is_bid=False    # going short or selling?
+
+>>> 20  # number of contracts to purchase @ k
 ```
