@@ -16,7 +16,7 @@ class KalshiLifecycleHandler:
             data(dict): A dictionary that represents the data from a `market_lifecycle` message.
         """
         try:
-            self.lifecycle = Lifecycle(
+            self.lifecycle.update(
                 is_deactivated=data.get(
                     "is_deactivated", self.lifecycle.is_deactivated
                 ),

@@ -1,19 +1,13 @@
 from typing import Any, Dict, List, Optional
-from loguru import logger
 
 import requests
 from common.state import State
+from loguru import logger
 
 from kalshi.authentication import Authenticator
-from kalshi.models.rest.market import Event, Market, Series, Trade
-from kalshi.models.rest.portfolio import (
-    EventPosition,
-    Fill,
-    MarketPosition,
-    Order,
-    OrderStatus,
-    PortfolioBalance,
-)
+from kalshi.models.rest.market import Event, Market, Series, TradeResponse
+from kalshi.models.rest.portfolio import (EventPosition, Fill, MarketPosition,
+                                          Order, OrderStatus, PortfolioBalance)
 
 
 class KalshiRestClient:
@@ -30,21 +24,23 @@ class KalshiRestClient:
 
     def _connect_(self) -> bool:
         """
-        Connects to the Kalshi REST API using authentication credentials.
+        Connects to the Kalshi by checking that we can create valid headers and successfully request a private endpoint.
 
         Returns:
-            bool: True if the login attempt is successful, False otherwise.
+            bool: True if we can create headers.
         """
-        # Retrieve the response body from a login attempt
-        login_response: Dict[str, str] = self.auth.get_auth_headers_rest(
-            self.state.rest_base_url
-        )
+        # HACK! Yeah just temporarily set `is_connected` to True so we can send the request.
+        self.is_connected = True
 
-        # If the "token" response object exists, return True
-        if login_response.get("token"):
+        # Get portfolio balance and ensure it doesn't error
+        balance = self.get_portfolio_balance()
+
+        # HACK! Reset.
+        self.is_connected = False
+
+        if isinstance(balance, PortfolioBalance):
             return True
 
-        # Else, login failed
         return False
 
     def _deep_fetch_(
@@ -266,7 +262,7 @@ class KalshiRestClient:
 
         return Market.from_dict(market_data)
 
-    def get_trades(self, ticker: str, fetch_all: bool = False) -> List[Trade]:
+    def get_trades(self, ticker: str, fetch_all: bool = False) -> List[TradeResponse]:
         """
         Retrieves a list of trades for a given market ticker.
 
@@ -281,7 +277,7 @@ class KalshiRestClient:
             raise Exception("User not logged in")
 
         method = "GET"
-        path = "/trade-api/v2/trades"
+        path = "/trade-api/v2/markets/trades"
         headers = self.auth.create_headers(method, path)
 
         # Optional construction of params from function arguments
@@ -305,8 +301,25 @@ class KalshiRestClient:
             response.raise_for_status()
             trades_data = response.json().get("trades", [])
 
-        trades = [Trade.from_dict(trade_data) for trade_data in trades_data]
+        trades = [TradeResponse.from_dict(trade_data) for trade_data in trades_data]
         return trades
+    
+    def get_market_orderbook(self, market_ticker: str) -> List[Any]:
+        if not self.is_connected:
+            raise Exception("User not logged in")
+
+        method = "GET"
+        path = f"/trade-api/v2/markets/{market_ticker}/orderbook"
+
+        headers = self.auth.create_headers(method, path)
+        response = requests.get(self.state.rest_base_url + path, headers=headers)
+        response.raise_for_status()
+
+        orderbook_data = response.json().get("orderbook", {})
+        logger.debug(orderbook_data)
+
+        return orderbook_data
+
 
     def get_exchange_schedule(self) -> Dict[str, Any]:
         """

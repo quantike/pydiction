@@ -20,7 +20,7 @@ class KalshiStream:
             raise ConnectionError("Unable to connect to Kalshi REST Client")
 
         # Set up WebSocket Client
-        await self.ws_client.connect()
+        await self.ws_client.start()
         await self.ws_client.add_subscription(self._channels_)
 
     async def _stream_(self):

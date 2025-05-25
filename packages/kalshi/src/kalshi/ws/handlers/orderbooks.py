@@ -40,10 +40,17 @@ class KalshiOrderbookHandler:
 
             match update_type:
                 case "orderbook_snapshot":
-                    # Our orderbook takes the "YES" perspective on the market. This means we interpret the "NO"
-                    # best bid as the best ask for "YES". This is done by taking 100 - yes_bid_price.
-                    bids = [Level(level[0], level[1]) for level in data["yes"]]
-                    asks = [Level(100 - level[0], level[1]) for level in data["no"]]
+                    # Sometimes, a snapshot can be empty. This will represent itself as having no "no" and no "yes"
+                    # fields. This means there are no active orders and we need to handle this situation.
+                    if "yes" not in data and "no" not in data:
+                        bids = []
+                        asks = []
+
+                    else:
+                        # Our orderbook takes the "YES" perspective on the market. This means we interpret the "NO"
+                        # best bid as the best ask for "YES". This is done by taking 100 - yes_bid_price.
+                        bids = [Level(level[0], level[1]) for level in data["yes"]]
+                        asks = [Level(100 - level[0], level[1]) for level in data["no"]]
 
                     # Refresh the book with the new snapshot data
                     self.orderbook.refresh("bids", bids, seq)
@@ -51,7 +58,7 @@ class KalshiOrderbookHandler:
 
                     # Log the successful processing of the snapshot
                     logger.info(
-                        f"Orderbook created: {self.orderbook.bba} mid {self.orderbook.mid_price} micro {self.orderbook.micro_price:.2f} spread {self.orderbook.spread},"
+                        f"Orderbook created: {self.orderbook.bba} spread {self.orderbook.spread},"
                     )
 
                 case "orderbook_delta":
@@ -59,7 +66,7 @@ class KalshiOrderbookHandler:
                         delta = Delta(price=data["price"], delta=data["delta"])
                         self.orderbook.update(self.orderbook.bids, delta, seq)
                         logger.info(
-                            f"Orderbook YES update: {self.orderbook.bba} mid {self.orderbook.mid_price} micro {self.orderbook.micro_price:.2f} spread {self.orderbook.spread}"
+                            f"Orderbook YES update: {self.orderbook.bba} spread {self.orderbook.spread}"
                         )
 
                     elif data["side"] == "no":
@@ -67,7 +74,7 @@ class KalshiOrderbookHandler:
                         delta = Delta(price=100 - data["price"], delta=data["delta"])
                         self.orderbook.update(self.orderbook.asks, delta, seq)
                         logger.info(
-                            f"Orderbook NO  update: {self.orderbook.bba} mid {self.orderbook.mid_price} micro {self.orderbook.micro_price:.2f} spread {self.orderbook.spread}"
+                            f"Orderbook NO  update: {self.orderbook.bba} spread {self.orderbook.spread}"
                         )
 
         except Exception as e:
