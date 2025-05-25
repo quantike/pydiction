@@ -106,10 +106,12 @@ class WsPool:
                     start_time = time.perf_counter()
                     await self._ping_connection_(connection_id)
                     latency = time.perf_counter() - start_time
-                    
+
                     # Update the latency deque for this connection
                     self.latencies[connection_id].append(latency)
-                    logger.info(f"Ping latency for connection {connection_id}: {latency} seconds")
+                    logger.info(
+                        f"Ping latency for connection {connection_id}: {latency} seconds"
+                    )
                 except Exception as e:
                     logger.error(f"Error pinging connection {connection_id}: {e}")
                     await self._reconnect_connection_(connection_id)

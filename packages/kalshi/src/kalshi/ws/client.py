@@ -278,7 +278,7 @@ class KalshiWsClient:
                 subscription_id = message.get("id")
                 if subscription_id is not None:
                     logger.info(
-                        f"subscription created to channel: {message["msg"]["channel"]}"
+                        f"subscription created to channel: {message['msg']['channel']}"
                     )
             # Handles un-subcriptions
             case "unsubscribed":
@@ -290,12 +290,12 @@ class KalshiWsClient:
                 subscription_id = message.get("id")
                 if subscription_id is not None:
                     logger.info(
-                        f"subscription(s) updated with ticker(s): {message["market_tickers"]}"
+                        f"subscription(s) updated with ticker(s): {message['market_tickers']}"
                     )
             # Handles errors by logging the code and message
             case "error":
                 subscription_id = message.get("id")
                 if subscription_id is not None:
-                    logger.error(f"error received: {message["msg"]}")
+                    logger.error(f"error received: {message['msg']}")
             case _:
                 self.handler.handle_message(message)

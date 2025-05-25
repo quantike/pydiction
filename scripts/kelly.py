@@ -10,6 +10,7 @@ import fire
 
 Side = Literal["YES", "NO"]
 
+
 def _kelly_fraction(side: Side, ps: int, k: int) -> float:
     """
     Full-Kelly fraction of bankroll for a single take-and-hold trade.
@@ -59,9 +60,9 @@ class KellyCLI:
         if f_full <= 0:
             return 0
 
-        stake_dollars = bankroll * kelly * f_full      # cents to risk
+        stake_dollars = bankroll * kelly * f_full  # cents to risk
         price_dollars = k / 100
-        contracts = int(stake_dollars / price_dollars) # whole contracts
+        contracts = int(stake_dollars / price_dollars)  # whole contracts
 
         # selling or shorting
         if is_bid:

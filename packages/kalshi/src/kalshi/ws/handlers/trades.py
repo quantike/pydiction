@@ -26,7 +26,7 @@ class KalshiTradeHandler:
 
             # Log the successful processing of the tick
             logger.info(
-                f"Trade processed {self.trade.side}: {self.trade.yes_price if self.trade.side == "yes" else self.trade.no_price} for {self.trade.count} @ {self.trade.ts}"
+                f"Trade processed {self.trade.side}: {self.trade.yes_price if self.trade.side == 'yes' else self.trade.no_price} for {self.trade.count} @ {self.trade.ts}"
             )
 
         except Exception as e:

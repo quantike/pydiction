@@ -6,8 +6,14 @@ from loguru import logger
 
 from kalshi.authentication import Authenticator
 from kalshi.models.rest.market import Event, Market, Series, TradeResponse
-from kalshi.models.rest.portfolio import (EventPosition, Fill, MarketPosition,
-                                          Order, OrderStatus, PortfolioBalance)
+from kalshi.models.rest.portfolio import (
+    EventPosition,
+    Fill,
+    MarketPosition,
+    Order,
+    OrderStatus,
+    PortfolioBalance,
+)
 
 
 class KalshiRestClient:
@@ -303,7 +309,7 @@ class KalshiRestClient:
 
         trades = [TradeResponse.from_dict(trade_data) for trade_data in trades_data]
         return trades
-    
+
     def get_market_orderbook(self, market_ticker: str) -> List[Any]:
         if not self.is_connected:
             raise Exception("User not logged in")
@@ -319,7 +325,6 @@ class KalshiRestClient:
         logger.debug(orderbook_data)
 
         return orderbook_data
-
 
     def get_exchange_schedule(self) -> Dict[str, Any]:
         """
