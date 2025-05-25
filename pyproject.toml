@@ -17,6 +17,7 @@ exclude = ["packages/maker", "packages/pipeline"]
 
 [dependency-groups]
 dev = [
+    "fire>=0.7.0",
     "jupyter>=1.1.1",
     "matplotlib>=3.9.2",
     "polars>=1.12.0",
